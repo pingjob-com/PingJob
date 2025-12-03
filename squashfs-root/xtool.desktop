@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=xtool
+Categories=Development;
+Exec=xtool
+Icon=xtool
+# TODO: remove
+Terminal=true
+X-AppImage-Version=1.16.1
