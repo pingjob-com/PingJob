@@ -1,0 +1,31 @@
+User-agent: *
+Allow: /
+
+# Sitemaps - PRODUCTION URLs
+Sitemap: https://www.pingjob.com/sitemap.xml
+Sitemap: https://www.pingjob.com/sitemap-jobs.xml
+Sitemap: https://www.pingjob.com/sitemap-companies.xml
+Sitemap: https://www.pingjob.com/sitemap-categories.xml
+Sitemap: https://www.pingjob.com/sitemap-static.xml
+
+# Block search engine crawling of private/admin pages
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /profile/
+Disallow: /applications/
+Disallow: /network/
+Disallow: /messaging/
+Disallow: /uploads/
+
+# Allow crawling of important public pages
+Allow: /jobs/
+Allow: /companies/
+Allow: /categories/
+Allow: /
+
+# Crawl delay to prevent server overload
+Crawl-delay: 1
+
+# Request rate limit for search engines
+Request-rate: 30/60

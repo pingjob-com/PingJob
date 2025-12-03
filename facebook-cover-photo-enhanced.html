@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PingJob Enhanced Facebook Cover Photo</title>
+    <style>
+        /* Photo Upload Controls */
+        .upload-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 250px;
+        }
+        
+        .upload-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .file-input {
+            opacity: 0;
+            position: absolute;
+            z-index: -1;
+        }
+        
+        .file-input-label {
+            display: block;
+            padding: 12px 20px;
+            background: #22c55e;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .file-input-label:hover {
+            background: #16a34a;
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+        }
+        
+        .uploaded-photo {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .error-message {
+            color: #dc2626;
+            font-size: 12px;
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        .success-message {
+            color: #16a34a;
+            font-size: 12px;
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        .photo-placeholder {
+            position: absolute;
+            right: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 120px;
+            height: 120px;
+            border: 2px dashed rgba(255,255,255,0.5);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.1);
+            z-index: 5;
+        }
+        
+        .user-photo {
+            position: absolute;
+            right: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 120px;
+            height: 120px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 5;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f3f4f6;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .cover-container {
+            width: 820px;
+            height: 312px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        /* Header section - exactly like homepage */
+        .header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 32px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Create PingJob logo using CSS */
+        .pingjob-logo {
+            height: 40px;
+            width: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logo-circles {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+        }
+        
+        .logo-circle {
+            width: 24px;
+            height: 24px;
+            background: #22c55e;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 12px;
+            color: black;
+            font-family: 'Inter', sans-serif;
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+        
+        .logo-circle:nth-child(1) { animation-delay: 0s; }
+        .logo-circle:nth-child(2) { animation-delay: 0.2s; }
+        .logo-circle:nth-child(3) { animation-delay: 0.4s; }
+        .logo-circle:nth-child(4) { animation-delay: 0.6s; }
+        .logo-circle:nth-child(5) { animation-delay: 0.8s; }
+        .logo-circle:nth-child(6) { animation-delay: 1.0s; }
+        .logo-circle:nth-child(7) { animation-delay: 1.2s; }
+        
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-2px); }
+        }
+        
+        /* Enhanced hero section with animations */
+        .hero-section {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 50%, #86efac 100%);
+            height: 248px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.4);
+            backdrop-filter: blur(1px);
+        }
+        
+        .decorative-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .floating-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .circle-1 {
+            width: 60px;
+            height: 60px;
+            top: 20px;
+            right: 150px;
+            animation-delay: 0s;
+            background: rgba(37,99,235, 0.1);
+        }
+        
+        .circle-2 {
+            width: 40px;
+            height: 40px;
+            bottom: 30px;
+            left: 200px;
+            animation-delay: 2s;
+            background: rgba(124,58,237, 0.1);
+        }
+        
+        .circle-3 {
+            width: 30px;
+            height: 30px;
+            top: 60px;
+            left: 300px;
+            animation-delay: 4s;
+            background: rgba(34,197,94, 0.1);
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-10px) rotate(180deg); opacity: 0.6; }
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            padding: 15px 60px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            text-align: center;
+            padding-top: 25px;
+        }
+        
+        .hero-left {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .hero-heading {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 12px;
+            margin-top: 10px;
+            color: #1f2937;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        @keyframes rainbowGlow {
+            0% { 
+                background-position: 0% 50%;
+                transform: scale(1) rotate(0deg);
+                filter: drop-shadow(0 0 15px rgba(255,0,128,0.8));
+            }
+            25% { 
+                background-position: 50% 50%;
+                transform: scale(1.05) rotate(1deg);
+                filter: drop-shadow(0 0 20px rgba(255,140,0,0.8));
+            }
+            50% { 
+                background-position: 100% 50%;
+                transform: scale(1.1) rotate(0deg);
+                filter: drop-shadow(0 0 25px rgba(64,224,208,0.8));
+            }
+            75% { 
+                background-position: 50% 50%;
+                transform: scale(1.05) rotate(-1deg);
+                filter: drop-shadow(0 0 20px rgba(255,140,0,0.8));
+            }
+            100% { 
+                background-position: 0% 50%;
+                transform: scale(1) rotate(0deg);
+                filter: drop-shadow(0 0 15px rgba(255,0,128,0.8));
+            }
+        }
+        
+        
+        .hero-subheading {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: #374151;
+            line-height: 1.3;
+        }
+        
+        @keyframes subtitlePulse {
+            0%, 100% { opacity: 0.9; }
+            50% { opacity: 1; }
+        }
+        
+        .feature-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+        
+        .feature-badge {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #374151;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .feature-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+        
+        .feature-badge:nth-child(1) { animation-delay: 0s; }
+        .feature-badge:nth-child(2) { animation-delay: 0.8s; }
+        .feature-badge:nth-child(3) { animation-delay: 1.6s; }
+        .feature-badge:nth-child(4) { animation-delay: 2.4s; }
+        .feature-badge:nth-child(5) { animation-delay: 3.2s; }
+        
+        @keyframes badgeFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+        }
+        
+        .feature-badge.primary {
+            background: rgba(37,99,235,0.1);
+            color: #2563eb;
+            border-color: rgba(37,99,235,0.2);
+        }
+        
+        .feature-badge.success {
+            background: rgba(34,197,94,0.1);
+            color: #22c55e;
+            border-color: rgba(34,197,94,0.2);
+        }
+        
+        .feature-badge.purple {
+            background: rgba(124,58,237,0.1);
+            color: #7c3aed;
+            border-color: rgba(124,58,237,0.2);
+        }
+        
+        .feature-badge.orange {
+            background: rgba(249,115,22,0.1);
+            color: #f97316;
+            border-color: rgba(249,115,22,0.2);
+        }
+        
+        .feature-badge.red {
+            background: rgba(239,68,68,0.1);
+            color: #ef4444;
+            border-color: rgba(239,68,68,0.2);
+        }
+        
+        .feature-badge.indigo {
+            background: rgba(99,102,241,0.1);
+            color: #6366f1;
+            border-color: rgba(99,102,241,0.2);
+        }
+        
+        .hero-stats {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            justify-content: center;
+        }
+        
+        .stat-item {
+            text-align: center;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 6px;
+            padding: 3px 6px;
+            border: 1px solid rgba(255,255,255,0.3);
+            animation: statPulse 3s ease-in-out infinite;
+        }
+        
+        .stat-item:nth-child(1) { animation-delay: 0s; }
+        .stat-item:nth-child(2) { animation-delay: 1s; }
+        .stat-item:nth-child(3) { animation-delay: 2s; }
+        
+        @keyframes statPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .stat-number {
+            font-size: 10px;
+            font-weight: 600;
+            color: #2563eb;
+        }
+        
+        .stat-label {
+            font-size: 7px;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="cover-container">
+        <!-- Header section matching homepage -->
+        <div class="header">
+            <div class="logo-section">
+                <!-- PingJob logo recreated to match your design with animations -->
+                <div class="pingjob-logo">
+                    <div class="logo-circles">
+                        <div class="logo-circle">P</div>
+                        <div class="logo-circle">I</div>
+                        <div class="logo-circle">N</div>
+                        <div class="logo-circle">G</div>
+                        <div class="logo-circle">J</div>
+                        <div class="logo-circle">O</div>
+                        <div class="logo-circle">B</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Enhanced hero section with animations -->
+        <div class="hero-section">
+            <div class="hero-overlay"></div>
+            
+            <!-- Decorative floating elements -->
+            <div class="decorative-elements">
+                <div class="floating-circle circle-1"></div>
+                <div class="floating-circle circle-2"></div>
+                <div class="floating-circle circle-3"></div>
+            </div>
+            
+            <div class="hero-content">
+                <h1 class="hero-heading">ONE CLEAR GOAL</h1>
+                <p class="hero-subheading">Presenting Pre-Vetted, Qualified Talent — No Middlemen. No Delays.</p>
+                
+                <div class="feature-badges">
+                    <div class="feature-badge success">100% Client-Only Jobs</div>
+                    <div class="feature-badge primary">10X Recruiter Engagement</div>
+                    <div class="feature-badge indigo">AI-Powered Matching</div>
+                    <div class="feature-badge orange">Real-Time Analytics</div>
+                    <div class="feature-badge red">Resume Score™</div>
+                </div>
+                
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">15000+</div>
+                        <div class="stat-label">Jobs</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">75000+</div>
+                        <div class="stat-label">Companies</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">130+</div>
+                        <div class="stat-label">Categories</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Photo placeholder/uploaded photo -->
+        <div class="photo-placeholder" id="photoPlaceholder">
+            <span style="color: rgba(255,255,255,0.7); font-size: 14px; text-align: center;">Your Photo<br>Here</span>
+        </div>
+    </div>
+
+    <!-- Upload Controls -->
+    <div class="upload-controls">
+        <div class="upload-title">📸 Add Your Photo</div>
+        <div class="file-input-wrapper">
+            <input type="file" id="photoUpload" class="file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/heic,image/heif,image/tiff" />
+            <label for="photoUpload" class="file-input-label">
+                Choose Photo
+            </label>
+        </div>
+        <div class="file-info">
+            Max 10MB • JPG, PNG, GIF, TIFF, HEIF, WebP
+        </div>
+        <div id="uploadMessage"></div>
+        <div id="photoPreview"></div>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center; color: #666; font-size: 14px;">
+        <strong>🎯 Enhanced Facebook Cover Photo:</strong> 820 x 312 pixels<br>
+        <em>Perfect logo recreation with animations and complete feature set</em><br>
+        <small style="margin-top: 10px; display: block;">Right-click and "Save image as..." or take a screenshot</small>
+    </div>
+    
+    <script>
+        document.getElementById('photoUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const messageDiv = document.getElementById('uploadMessage');
+            const previewDiv = document.getElementById('photoPreview');
+            const placeholder = document.getElementById('photoPlaceholder');
+            
+            // Clear previous messages
+            messageDiv.innerHTML = '';
+            
+            if (!file) return;
+            
+            // Validate file size (10MB)
+            const maxSize = 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                messageDiv.innerHTML = '<div class="error-message">File too large. Must be under 10MB.</div>';
+                return;
+            }
+            
+            // Validate file type
+            const allowedTypes = [
+                'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
+                'image/webp', 'image/heic', 'image/heif', 'image/tiff'
+            ];
+            
+            if (!allowedTypes.includes(file.type)) {
+                messageDiv.innerHTML = '<div class="error-message">Invalid file type. Only JPG, PNG, GIF, TIFF, HEIF, and WebP files are allowed.</div>';
+                return;
+            }
+            
+            // Show success message
+            messageDiv.innerHTML = '<div class="success-message">✅ Photo uploaded successfully!</div>';
+            
+            // Create preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Remove placeholder and add user photo
+                placeholder.style.display = 'none';
+                
+                // Create or update user photo
+                let userPhoto = document.getElementById('userPhoto');
+                if (!userPhoto) {
+                    userPhoto = document.createElement('img');
+                    userPhoto.id = 'userPhoto';
+                    userPhoto.className = 'user-photo';
+                    placeholder.parentNode.appendChild(userPhoto);
+                }
+                userPhoto.src = e.target.result;
+                
+                // Add preview thumbnail in controls
+                previewDiv.innerHTML = `
+                    <img src="${e.target.result}" class="uploaded-photo" />
+                    <div style="text-align: center; margin-top: 5px; font-size: 12px; color: #6b7280;">
+                        ${file.name}
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        // Add download functionality
+        function downloadCover() {
+            // Hide upload controls temporarily
+            const controls = document.querySelector('.upload-controls');
+            controls.style.display = 'none';
+            
+            // Use html2canvas or similar approach would go here
+            // For now, just show the controls again
+            setTimeout(() => {
+                controls.style.display = 'block';
+                alert('Right-click on the cover and select "Save image as..." or take a screenshot!');
+            }, 100);
+        }
+        
+        // Add download button
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadControls = document.querySelector('.upload-controls');
+            const downloadBtn = document.createElement('button');
+            downloadBtn.innerHTML = '⬇️ Download Cover';
+            downloadBtn.style.cssText = `
+                width: 100%;
+                padding: 12px;
+                background: #3b82f6;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                margin-top: 15px;
+                cursor: pointer;
+                font-weight: 500;
+            `;
+            downloadBtn.onclick = downloadCover;
+            uploadControls.appendChild(downloadBtn);
+        });
+    </script>
+</body>
+</html>

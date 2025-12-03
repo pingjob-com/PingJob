@@ -1,0 +1,151 @@
+===========================================
+REPLIT DEPLOYMENT - Network Page Update
+COMPLETE INSTRUCTIONS TO MAKE /network WORK
+===========================================
+
+STEP 1: UPDATE FRONTEND FILE
+-----------------------------
+File to update: client/src/pages/network-page.tsx
+Action: Replace the entire file with the updated version
+
+IMPORTANT: 
+- DO NOT update network.tsx (it's not used for /network route)
+- Only network-page.tsx is used (see App.tsx line 228: <Route path="/network" component={NetworkPage} />)
+
+STEP 2: DATABASE SETUP - RUN THIS SQL
+--------------------------------------
+Execute this SQL script on your database to ensure required tables exist:
+
+-- Connections table for user connections
+CREATE TABLE IF NOT EXISTS "connections" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "requester_id" varchar NOT NULL,
+  "requested_id" varchar NOT NULL,
+  "status" varchar DEFAULT 'pending',
+  "created_at" timestamp DEFAULT now(),
+  CONSTRAINT "connections_requester_id_users_id_fk" 
+    FOREIGN KEY ("requester_id") REFERENCES "users"("id") ON DELETE CASCADE,
+  CONSTRAINT "connections_requested_id_users_id_fk" 
+    FOREIGN KEY ("requested_id") REFERENCES "users"("id") ON DELETE CASCADE
+);
+
+-- Messages table for user messaging
+CREATE TABLE IF NOT EXISTS "messages" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "sender_id" varchar NOT NULL,
+  "receiver_id" varchar NOT NULL,
+  "content" text NOT NULL,
+  "sent_at" timestamp DEFAULT now(),
+  "read_at" timestamp,
+  "is_read" boolean DEFAULT false,
+  CONSTRAINT "messages_sender_id_users_id_fk" 
+    FOREIGN KEY ("sender_id") REFERENCES "users"("id") ON DELETE CASCADE,
+  CONSTRAINT "messages_receiver_id_users_id_fk" 
+    FOREIGN KEY ("receiver_id") REFERENCES "users"("id") ON DELETE CASCADE
+);
+
+-- Performance indexes for faster queries
+CREATE INDEX IF NOT EXISTS "idx_connections_requester" ON "connections"("requester_id");
+CREATE INDEX IF NOT EXISTS "idx_connections_requested" ON "connections"("requested_id");
+CREATE INDEX IF NOT EXISTS "idx_connections_status" ON "connections"("status");
+CREATE INDEX IF NOT EXISTS "idx_messages_sender" ON "messages"("sender_id");
+CREATE INDEX IF NOT EXISTS "idx_messages_receiver" ON "messages"("receiver_id");
+CREATE INDEX IF NOT EXISTS "idx_messages_read" ON "messages"("is_read");
+
+STEP 3: VERIFY BACKEND ENDPOINTS EXIST
+---------------------------------------
+Check that server/routes.ts contains these endpoints (they should already exist):
+
+REQUIRED ENDPOINTS:
+✅ GET /api/categories/with-user-counts
+   - Returns categories with user counts for filtering
+
+✅ GET /api/users/network
+   - Query params: categoryId (optional), search (optional), limit (default: 100)
+   - Returns users for network discovery page
+
+✅ GET /api/connections
+   - Returns user's connections (requires authentication)
+
+✅ POST /api/connections
+   - Body: { receiverId: string }
+   - Creates a connection request (requires authentication)
+
+✅ PUT /api/connections/:connectionId/status
+   - Body: { status: 'accepted' | 'declined' }
+   - Updates connection status (requires authentication)
+
+✅ DELETE /api/connections/:connectionId
+   - Deletes a connection (requires authentication)
+
+✅ GET /api/connection-requests
+   - Returns pending connection requests for user (requires authentication)
+
+✅ GET /api/conversations
+   - Returns all conversations for user (requires authentication)
+
+✅ GET /api/messages/:receiverId
+   - Returns messages between user and receiver (requires authentication)
+
+✅ POST /api/messages
+   - Body: { receiverId: string, content: string }
+   - Sends a message (requires authentication)
+
+✅ GET /api/messages/unread/count
+   - Returns count of unread messages (requires authentication)
+
+STEP 4: VERIFY STORAGE FUNCTIONS EXIST
+---------------------------------------
+Check that server/storage.ts contains these functions (they should already exist):
+
+REQUIRED FUNCTIONS:
+✅ getAllUsersForNetwork(options) - Fetches users with filtering
+✅ getAllUserCountsByCategory() - Gets user counts per category
+✅ getConnections(userId) - Fetches user's connections
+✅ createConnectionRequest(senderId, receiverId) - Creates connection request
+✅ updateConnectionStatus(connectionId, status) - Updates connection status
+✅ deleteConnection(connectionId, userId) - Deletes connection
+✅ getConnectionRequests(userId) - Gets pending requests
+✅ getConversations(userId) - Gets all conversations
+✅ getMessages(senderId, receiverId) - Fetches messages
+✅ sendMessage(senderId, receiverId, content) - Sends message
+✅ getUnreadMessageCount(userId) - Gets unread count
+
+STEP 5: REBUILD AND RESTART
+----------------------------
+1. Run: npm run build
+2. Restart the server
+
+STEP 6: VERIFY DEPLOYMENT
+--------------------------
+Check server logs for any errors after restart.
+Verify the /network route is accessible and API endpoints respond correctly.
+
+TROUBLESHOOTING
+---------------
+If errors occur:
+
+1. Check server logs for API errors
+2. Verify database connection is working
+3. Verify authentication middleware is correctly applied
+4. Check CORS settings if API calls fail
+5. Verify all environment variables are set correctly
+6. Check that database tables were created successfully
+
+VERIFICATION CHECKLIST
+-----------------------
+- [ ] Updated network-page.tsx file uploaded
+- [ ] Database tables (connections, messages) created
+- [ ] All API endpoints exist in server/routes.ts
+- [ ] All storage functions exist in server/storage.ts
+- [ ] Server rebuilt (npm run build)
+- [ ] Server restarted
+- [ ] Server logs show no errors
+- [ ] API endpoints respond correctly
+
+SUMMARY
+-------
+Files to update: ONLY client/src/pages/network-page.tsx
+Database: Run SQL script to create connections and messages tables
+Backend: Verify endpoints exist (should already be there)
+Rebuild and restart server.

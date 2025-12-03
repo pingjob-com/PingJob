@@ -1,0 +1,408 @@
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import DashboardStats from "@/components/dashboard-stats";
+import JobCard from "@/components/job-card";
+import { setMetaTags } from "@/lib/meta-tags";
+import { resolveProfileImageUrl } from "@/lib/apiConfig";
+import { 
+  Plus, 
+  Eye, 
+  Users, 
+  Layers, 
+  Briefcase,
+  TrendingUp,
+  Bell,
+  MessageSquare,
+  Building2
+} from "lucide-react";
+import { Link } from "wouter";
+const logoPath = 'https://cdn.pingjob.com/logo.webp';
+import PingJobHome from "@/pages/pingjob-home";
+import AdBanner from "@/components/ads/AdBanner";
+
+export default function Home() {
+  const { user } = useAuth();
+
+  // Set meta tags for SEO
+  useEffect(() => {
+    if (!user) {
+      setMetaTags({
+        title: 'PingJob - Find Jobs & Professional Networking Platform',
+        description: 'Discover your next career opportunity on PingJob. Browse thousands of jobs from verified employers, connect with professionals, and land your dream job. No recruiters, direct connections.',
+        keywords: 'jobs, job search, employment, careers, hiring, job board, recruitment, professional networking',
+        ogTitle: 'PingJob - Find Your Next Job',
+        ogDescription: 'Browse thousands of jobs and connect with verified employers on PingJob',
+        canonicalUrl: 'https://www.pingjob.com/'
+      });
+    }
+  }, [user]);
+
+  const { data: profile } = useQuery({
+    queryKey: [`/api/profile/${user?.id}`],
+    enabled: !!user?.id
+  });
+
+  // Fetch job categories
+  const { data: categories = [] } = useQuery<any[]>({
+    queryKey: ['/api/categories']
+  });
+
+  // Fetch top companies
+  const { data: companies = [] } = useQuery<any[]>({
+    queryKey: ['/api/companies/top']
+  });
+
+  const { data: recentJobs, isLoading: jobsLoading, error: jobsError } = useQuery<any[]>({
+    queryKey: ['/api/jobs', { limit: 6 }]
+  });
+
+  // Also fetch admin jobs for the Latest Job Opportunities section
+  const { data: adminJobs, isLoading: adminJobsLoading, error: adminJobsError } = useQuery({
+    queryKey: ['/api/admin-jobs', { limit: 6 }]
+  });
+
+  // Debug logging only in development
+  if (import.meta.env.DEV) {
+    if (import.meta.env.DEV) console.log('=== HOME PAGE JOBS DEBUG ===');
+    console.log('Recent jobs (API jobs) loading:', jobsLoading);
+    console.log('Recent jobs (API jobs) error:', jobsError);
+    console.log('Recent jobs (API jobs) data:', recentJobs);
+    console.log('Recent jobs (API jobs) length:', Array.isArray(recentJobs) ? recentJobs.length : 0);
+    console.log('Admin jobs loading:', adminJobsLoading);
+    console.log('Admin jobs error:', adminJobsError);
+    console.log('Admin jobs data:', adminJobs);
+    console.log('Admin jobs length:', Array.isArray(adminJobs) ? adminJobs.length : 0);
+    console.log('=============================');
+  }
+
+  const { data: connections } = useQuery({
+    queryKey: ['/api/connections'],
+    enabled: !!user
+  });
+
+  const { data: connectionRequests } = useQuery({
+    queryKey: ['/api/connection-requests'],
+    enabled: !!user
+  });
+
+  // Set meta tags for home page (only for non-logged-in users)
+  useEffect(() => {
+    if (!user) {
+      setMetaTags({
+        title: 'PingJob - Job Board & Professional Networking Platform',
+        description: 'Discover job opportunities and professional networking on PingJob. Post jobs, apply for positions, and connect with top talent. Browse thousands of jobs across multiple industries.',
+        keywords: 'job board, jobs, careers, employment, professional networking, hiring, recruiter',
+        ogTitle: 'PingJob - Find Your Next Career Opportunity',
+        ogDescription: 'Connect with opportunities and professionals on PingJob. The ultimate job board and networking platform.',
+        canonicalUrl: 'https://www.pingjob.com/'
+      });
+    }
+  }, [user]);
+
+  const { data: jobApplications = [] } = useQuery({
+    queryKey: ['/api/applications', { limit: 3 }],
+    enabled: !!user && user.userType === 'job_seeker'
+  });
+
+  const { data: experiences } = useQuery({
+    queryKey: [`/api/experience/${user?.id}`],
+    enabled: !!user?.id
+  });
+
+  const { data: education } = useQuery({
+    queryKey: [`/api/education/${user?.id}`],
+    enabled: !!user?.id
+  });
+
+  const { data: skills } = useQuery({
+    queryKey: [`/api/skills/${user?.id}`],
+    enabled: !!user?.id
+  });
+
+  const calculateProfileCompletion = () => {
+    if (!profile) return 0;
+    let completion = 20; // Base score for having a profile
+    
+    if ((profile as any).headline) completion += 15;
+    if ((profile as any).summary) completion += 15;
+    if ((profile as any).location) completion += 10;
+    if (experiences && Array.isArray(experiences) && experiences.length > 0) completion += 20;
+    if (education && Array.isArray(education) && education.length > 0) completion += 10;
+    if (skills && Array.isArray(skills) && skills.length > 0) completion += 10;
+    
+    return Math.min(completion, 100);
+  };
+
+  const profileCompletion = calculateProfileCompletion();
+
+  // Show public home for non-authenticated users
+  if (!user) {
+    return <PingJobHome />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Logo Header */}
+      <div className="absolute top-4 left-4 z-10">
+        <Link href="/">
+          <img 
+            src={logoPath} 
+            alt="PingJob Logo" 
+            className="h-10 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+          />
+        </Link>
+      </div>
+      
+      {/* Top Banner Advertisement */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <AdBanner slot="BANNER_TOP" />
+        </div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Sidebar - Profile Card */}
+          <div className="space-y-6">
+          <Card className="dashboard-card">
+            <CardContent className="p-6">
+              <div className="flex items-center mb-4">
+                <Avatar className="h-16 w-16 mr-4">
+                  <AvatarImage src={resolveProfileImageUrl(user.profileImageUrl)} />
+                  <AvatarFallback>
+                    {user.firstName?.[0]}{user.lastName?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-semibold text-lg">
+                    {user.firstName} {user.lastName}
+                  </h3>
+                  <p className="text-gray-600 text-sm">{(profile as any)?.headline || 'Add a headline'}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Profile Completeness</span>
+                  <span className="font-semibold">{profileCompletion}%</span>
+                </div>
+                <Progress value={profileCompletion} className="progress-bar" />
+              </div>
+              
+              <Separator className="my-4" />
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center text-gray-600">
+                  <Eye className="h-4 w-4 mr-2" />
+                  <span>Profile views this week</span>
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <Users className="h-4 w-4 mr-2" />
+                  <span>{Array.isArray(connections) ? connections.length : 0} connections</span>
+                </div>
+              </div>
+              
+              <Button 
+                asChild 
+                variant="outline" 
+                className="w-full mt-4"
+              >
+                <Link href={`/profile/${user.id}`}>
+                  View Profile
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card className="dashboard-card">
+            <CardHeader>
+              <CardTitle className="text-lg">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button asChild variant="outline" className="w-full justify-start">
+                <Link href={`/profile/${user.id}`}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Experience
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full justify-start">
+                <Link href="/network">
+                  <Users className="h-4 w-4 mr-2" />
+                  Find Connections
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full justify-start">
+                <Link href="/dashboard">
+                  <Layers className="h-4 w-4 mr-2" />
+                  Create Post
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <AdBanner slot="SIDEBAR_PRIMARY" />
+        </div>
+
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Dashboard Stats */}
+          <DashboardStats userType={user.userType} />
+
+          {/* Recent Activity / Notifications */}
+          <Card className="dashboard-card">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Bell className="h-5 w-5 mr-2" />
+                Recent Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Array.isArray(connectionRequests) && connectionRequests.length > 0 && (
+                <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                  <Users className="h-5 w-5 text-linkedin-blue" />
+                  <span className="text-sm">
+                    {connectionRequests.length} new connection request{connectionRequests.length > 1 ? 's' : ''}
+                  </span>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href="/network">
+                      View
+                    </Link>
+                  </Button>
+                </div>
+              )}
+              
+              {user.userType === 'job_seeker' && (
+                <>
+                  <div className="flex items-center space-x-3">
+                    <Eye className="h-5 w-5 text-success-green" />
+                    <span className="text-sm">Your profile was viewed 12 times this week</span>
+                  </div>
+                  
+                  {Array.isArray(jobApplications) && jobApplications.length > 0 && (
+                    <div className="flex items-center space-x-3">
+                      <Briefcase className="h-5 w-5 text-linkedin-blue" />
+                      <span className="text-sm">
+                        Applied to {Math.min(jobApplications.length, 3)} recent job{jobApplications.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {user.userType === 'recruiter' && (
+                <div className="flex items-center space-x-3">
+                  <TrendingUp className="h-5 w-5 text-warning-orange" />
+                  <span className="text-sm">Your job posts received 45 new applications</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recommended Jobs (for Job Seekers) or Recent Applications (for Recruiters) */}
+          {user.userType === 'job_seeker' && (
+            <Card className="dashboard-card">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Recommended Jobs</span>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/jobs">View All</Link>
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {recentJobs && recentJobs.length > 0 ? (
+                  recentJobs.slice(0, 3).map((job: any) => (
+                    <div key={job.id} className="border-l-4 border-linkedin-blue pl-4">
+                      <h4 className="font-medium text-sm">{job.title}</h4>
+                      <p className="text-xs text-gray-600">
+                        {job.companyName || job.company?.name || 'Unknown Company'} • {
+                          (() => {
+                            if (job.company?.location) {
+                              const cleaned = job.company.location
+                                .replace(/, United States$/, '')
+                                .replace(/ United States$/, '')
+                                .replace(/United States,?\s*/, '')
+                                .trim();
+                              const parts = cleaned.split(',').map((p: string) => p.trim()).filter(Boolean);
+                              return parts.length >= 3 ? parts.slice(-2).join(', ') : cleaned;
+                            }
+                            return job.location || 'Remote';
+                          })()
+                        }
+                      </p>
+                      <p className="text-xs text-linkedin-blue">
+                        {new Date(job.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-sm">No job recommendations available</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Recent Jobs Grid */}
+          <Card className="dashboard-card">
+            <CardHeader>
+              <CardTitle>Latest Job Opportunities</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {Array.isArray(adminJobs) && adminJobs.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Array.isArray(adminJobs) ? adminJobs.slice(0, 4).map((job: any, index: number) => {
+                    return <JobCard key={job.id} job={job} compact showCompany={true} />;
+                  }) : []}
+                </div>
+              ) : (
+                <div className="text-gray-500 text-center py-8">
+                  No job opportunities available at the moment. Check back later!
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Sidebar for non-authenticated users - Show Categories and Companies */}
+        {!user && (
+          <div className="space-y-6">
+            {/* Top Job Categories */}
+            <Card className="dashboard-card">
+              <CardHeader>
+                <CardTitle>Top Job Categories</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {/* Categories will be loaded here */}
+                  <p className="text-gray-500 text-sm">Loading categories...</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Top Companies */}
+            <Card className="dashboard-card">
+              <CardHeader>
+                <CardTitle>Top Companies</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {/* Companies will be loaded here */}
+                  <p className="text-gray-500 text-sm">Loading companies...</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PingJob Facebook Cover Photo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .cover-container {
+            width: 820px;
+            height: 312px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        /* Header section - exactly like homepage */
+        .header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            padding: 0 32px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo {
+            height: 40px;
+            width: auto;
+        }
+        
+        /* Create PingJob logo using SVG */
+        .pingjob-logo {
+            height: 40px;
+            width: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logo-circles {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+        }
+        
+        .logo-circle {
+            width: 24px;
+            height: 24px;
+            background: #22c55e;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 12px;
+            color: black;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Hero section - matching homepage gradient from-blue-50 via-indigo-50 to-purple-50 */
+        .hero-section {
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #f3e8ff 100%);
+            height: 248px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.4);
+            backdrop-filter: blur(1px);
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            padding: 20px 60px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .hero-left {
+            flex: 1;
+            max-width: 600px;
+            text-align: center;
+        }
+        
+        .hero-heading {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 12px;
+            color: #374151;
+        }
+        
+        .hero-subheading {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .feature-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .hero-stats {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            justify-content: center;
+        }
+        
+        .stat-item {
+            text-align: center;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 6px;
+            padding: 3px 6px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .stat-number {
+            font-size: 10px;
+            font-weight: 600;
+            color: #2563eb;
+        }
+        
+        .stat-label {
+            font-size: 7px;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .feature-badge {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #374151;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .feature-badge.primary {
+            background: rgba(37,99,235,0.1);
+            color: #2563eb;
+            border-color: rgba(37,99,235,0.2);
+        }
+        
+        .feature-badge.success {
+            background: rgba(34,197,94,0.1);
+            color: #22c55e;
+            border-color: rgba(34,197,94,0.2);
+        }
+        
+        .feature-badge.purple {
+            background: rgba(124,58,237,0.1);
+            color: #7c3aed;
+            border-color: rgba(124,58,237,0.2);
+        }
+        
+        .feature-badge.orange {
+            background: rgba(249,115,22,0.1);
+            color: #f97316;
+            border-color: rgba(249,115,22,0.2);
+        }
+        
+        .feature-badge.red {
+            background: rgba(239,68,68,0.1);
+            color: #ef4444;
+            border-color: rgba(239,68,68,0.2);
+        }
+        
+        .feature-badge.indigo {
+            background: rgba(99,102,241,0.1);
+            color: #6366f1;
+            border-color: rgba(99,102,241,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="cover-container">
+        <!-- Header section matching homepage -->
+        <div class="header">
+            <div class="logo-section">
+                <!-- PingJob logo recreated to match your design -->
+                <div class="pingjob-logo">
+                    <div class="logo-circles">
+                        <div class="logo-circle">P</div>
+                        <div class="logo-circle">I</div>
+                        <div class="logo-circle">N</div>
+                        <div class="logo-circle">G</div>
+                        <div class="logo-circle">J</div>
+                        <div class="logo-circle">O</div>
+                        <div class="logo-circle">B</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hero section matching homepage styling -->
+        <div class="hero-section">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <div class="hero-left">
+                    <h1 class="hero-heading">One Clear Goal</h1>
+                    <p class="hero-subheading">Presenting Qualified Talent Directly</p>
+                    
+                    <div class="feature-badges">
+                        <div class="feature-badge success">100% Client-Only Jobs</div>
+                        <div class="feature-badge primary">10X Recruiter Engagement</div>
+                        <div class="feature-badge indigo">AI-Powered Matching</div>
+                        <div class="feature-badge orange">Real-Time Analytics</div>
+                        <div class="feature-badge red">Resume Score™</div>
+                    </div>
+                    
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <div class="stat-number">15000+</div>
+                            <div class="stat-label">Jobs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">75000+</div>
+                            <div class="stat-label">Companies</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">130+</div>
+                            <div class="stat-label">Categories</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center; color: #666; font-size: 14px;">
+        <strong>Facebook Cover Photo:</strong> 820 x 312 pixels<br>
+        <em>Right-click and "Save image as..." or take a screenshot</em>
+    </div>
+</body>
+</html>
