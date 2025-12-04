@@ -1119,48 +1119,46 @@ export default function PingJobHome() {
                       onClick={() => navigate(`/jobs/${job.id}`)}
                     >
                       <CardContent className="p-4">
-                        <div className="flex items-start space-x-3 mb-3">
+                        {/* Company Logo and Name with Vendors Badge */}
+                        <div className="flex items-start space-x-3 mb-2">
                           <LogoImage company={job.company} className="w-12 h-12" />
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 text-sm">
-                              {job.title}
+                            <h3 className="font-semibold text-xs text-gray-800">
+                              {job.company?.name || 'Company Name'}
                             </h3>
-                            <p className="text-xs text-gray-600 mb-1">{job.company?.name}</p>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <div className="text-xs text-gray-500">
+                                {formatJobLocation(job) || 'Location not specified'}
+                              </div>
+                              {(job.company?.vendorCount || 0) > 0 && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 whitespace-nowrap">
+                                  {job.company?.vendorCount} vendors
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         
-                        {formatJobLocation(job) && (
-                          <div className="flex items-center text-xs text-gray-600 mb-3">
-                            <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
-                            <span className="truncate">{formatJobLocation(job)}</span>
-                          </div>
-                        )}
+                        {/* Job Title */}
+                        <h4 className="font-semibold text-sm text-gray-900 line-clamp-2 mb-2 mt-2">
+                          {job.title}
+                        </h4>
                         
-                        {/* Vendor count and date row */}
-                        <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-                          <div className="flex items-center gap-2">
+                        {/* Job Stats Footer */}
+                        <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-xs text-gray-500">
+                          <div className="flex items-center gap-3">
                             <span className="flex items-center">
                               <Users className="h-3 w-3 mr-1" />
                               {job.applicationCount || job.categoryMatchedApplicants || 0} applicants
                             </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {(job.company?.vendorCount || 0) > 0 && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {job.company?.vendorCount} vendors
-                              </span>
-                            )}
                             <span className="flex items-center">
                               <Calendar className="h-3 w-3 mr-1" />
                               {job.updatedAt ? new Date(job.updatedAt).toLocaleDateString() : (job.createdAt ? new Date(job.createdAt).toLocaleDateString() : new Date().toLocaleDateString())}
                             </span>
                           </div>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                           <Button 
                             size="sm" 
-                            className="text-xs px-3 py-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                            className="text-xs px-3 py-1 h-7 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleApplyNow(job.id);
