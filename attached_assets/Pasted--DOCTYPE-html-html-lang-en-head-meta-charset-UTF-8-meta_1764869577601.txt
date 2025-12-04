@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: gap: content:; connect-src * 'self' https://www.pingjob.com wss: ws:;">
+    <title>About PingJob - Job Board & Professional Networking</title>
+    <meta name="description" content="Learn about PingJob, a comprehensive job board and professional networking platform connecting job seekers with opportunities." />
+    <meta name="keywords" content="about PingJob, job board, professional networking, careers" />
+    <meta property="og:title" content="About PingJob" />
+    <meta property="og:description" content="Discover PingJob - the premier job board and professional networking platform." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.pingjob.com/about" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="About PingJob" />
+    <meta name="twitter:description" content="Discover PingJob - the premier job board and professional networking platform." />
+    <link rel="canonical" href="https://www.pingjob.com/about" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    
+    <!-- Preload Logo from CDN -->
+    <link rel="preload" as="image" href="https://cdn.pingjob.com/logo.webp" />
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQEKEPGNZN"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-BQEKEPGNZN');
+    </script>
+    
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9555763610767023"
+     crossorigin="anonymous"></script>
+    <script type="module" crossorigin src="/assets/index-DtLuxNN2.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CP8RaXFF.css">
+  </head>
+  <body>
+    <div id="root" style="display: block; visibility: visible; opacity: 1; width: 100%; min-height: 100vh;"></div>
+  </body>
+</html>
