@@ -1136,10 +1136,28 @@ export default function PingJobHome() {
                           </div>
                         )}
                         
+                        {/* Vendor count and date row */}
+                        <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="flex items-center">
+                              <Users className="h-3 w-3 mr-1" />
+                              {job.applicationCount || job.categoryMatchedApplicants || 0} applicants
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {(job.company?.vendorCount || 0) > 0 && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {job.company?.vendorCount} vendors
+                              </span>
+                            )}
+                            <span className="flex items-center">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {job.updatedAt ? new Date(job.updatedAt).toLocaleDateString() : (job.createdAt ? new Date(job.createdAt).toLocaleDateString() : new Date().toLocaleDateString())}
+                            </span>
+                          </div>
+                        </div>
+
                         <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                          <span className="text-xs text-gray-500">
-                            {job.applicationCount || job.categoryMatchedApplicants || 0} applicants
-                          </span>
                           <Button 
                             size="sm" 
                             className="text-xs px-3 py-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
