@@ -49,10 +49,14 @@ export function registerStaticSEORoutes(app: Express) {
         return next();
       }
       
-      // Get base URL from request
-      const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+      // Get base URL - use production domain for SEO consistency
       const host = req.get('host') || 'www.pingjob.com';
-      const baseUrl = `${protocol}://${host}`;
+      const isProduction = host === 'www.pingjob.com' || host === 'pingjob.com';
+      
+      // Always use HTTPS and www subdomain for production SEO
+      const baseUrl = isProduction 
+        ? 'https://www.pingjob.com' 
+        : `${req.get('x-forwarded-proto') || req.protocol || 'https'}://${host}`;
       
       console.log(`🤖 Bot detected for ${pagePath}, generating SEO HTML (UA: ${userAgent?.substring(0, 50)}...)`);
       
