@@ -6,7 +6,6 @@ import session from "express-session";
 import { registerRoutes } from "./routes";
 import { registerJobSEORoutes } from "./job-seo-routes";
 import { registerCompanySEORoutes } from "./company-seo-routes";
-import { registerStaticSEORoutes } from "./static-seo-routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { pool, db } from "./db";
 
@@ -55,8 +54,17 @@ setupSimpleAuth(app);
 
 // Serve ads.txt file for Google AdSense verification (HIGHEST PRIORITY)
 app.get('/ads.txt', (req, res) => {
-  console.log(`📋 ads.txt requested from host: ${req.get('host')}`);
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  // Only serve ads.txt on production domain
+  const host = req.get('host') || '';
+  const isProduction = host === 'www.pingjob.com';
+  
+  if (!isProduction) {
+    console.log(`ads.txt blocked for host: ${host}`);
+    return res.status(404).send('Not Found - ads.txt only available on www.pingjob.com');
+  }
+  
+  console.log(`ads.txt served for production host: ${host}`);
+  res.setHeader('Content-Type', 'text/plain');
   res.setHeader('Cache-Control', 'public, max-age=86400');
   res.send('google.com, pub-9555763610767023, DIRECT, f08c47fec0942fa0');
 });
@@ -190,11 +198,9 @@ app.use((req, res, next) => {
 
   // IMPORTANT: Register SEO routes BEFORE Vite middleware setup
   // This ensures SEO routes are handled before the catch-all route
-  // Static SEO routes must be registered FIRST for highest priority
-  registerStaticSEORoutes(app);
   registerJobSEORoutes(app);
   registerCompanySEORoutes(app);
-  console.log("✅ All SEO routes registered before Vite setup");
+  console.log("✅ SEO routes registered before Vite setup");
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

@@ -98,23 +98,6 @@ The frontend utilizes React with TypeScript, Vite, Radix UI, and Tailwind CSS to
 - **Callback URL**: Uses dynamic domain detection for development/production
 - **Session Handling**: Uses Passport.js req.login() for seamless authentication
 
-## Recent Updates (December 4, 2025)
-
-### Search Engine Indexing Fix (Bing/Google)
-- **Status**: ✅ Fixed and Deployed
-- **Problem**: Search engines (Bing, Google) were seeing empty HTML content because the React SPA only renders content via JavaScript. Bing showed "Title tag missing", "Meta Description tag missing", "H1 tag missing" errors.
-- **Solution**: Implemented server-side pre-rendering for bot/crawler requests
-- **Implementation Files**:
-  - `server/static-seo-template.ts` - Generates full SEO HTML with H1, H2, visible content, meta tags, structured data
-  - `server/static-seo-routes.ts` - Routes that detect bot user agents and serve pre-rendered HTML
-  - `server/index.ts` - Registers static SEO routes before Vite middleware
-- **How It Works**:
-  - Bot detection based on user agent (Googlebot, Bingbot, etc.)
-  - Bots receive full HTML with title, meta description, H1, H2, visible content
-  - Regular users still get the React SPA for full interactivity
-- **Pages Covered**: Home (/), About (/about), Jobs (/jobs), Companies (/companies), Pricing (/pricing), Contact (/contact), Privacy (/privacy), Terms (/terms), Auth (/auth), Network (/network)
-- **Next Steps**: Request re-indexing in Bing/Google Search Console
-
 ## Recent Updates (December 3, 2025)
 
 ### Native iOS App Created

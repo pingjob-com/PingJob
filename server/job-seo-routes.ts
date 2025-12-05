@@ -47,12 +47,10 @@ export function registerJobSEORoutes(app: Express) {
         return res.status(404).set({ "Content-Type": "text/html" }).end(generateDefaultSEOHTML());
       }
 
-      // Get base URL - use production domain for SEO consistency
-      const host = req.get('host') || 'www.pingjob.com';
-      const isProduction = host === 'www.pingjob.com' || host === 'pingjob.com';
-      const baseUrl = isProduction 
-        ? 'https://www.pingjob.com' 
-        : `${req.get('x-forwarded-proto') || req.protocol || 'https'}://${host}`;
+      // Get base URL from request
+      const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+      const host = req.get('host') || 'pingjob.com';
+      const baseUrl = `${protocol}://${host}`;
       
       // Check if this is the canonical URL
       const canonicalPath = generateJobUrl(parsed.id, jobData.title);
@@ -120,12 +118,10 @@ export function registerJobSEORoutes(app: Express) {
         return res.status(404).set({ "Content-Type": "text/html" }).end(generateDefaultSEOHTML());
       }
 
-      // Get base URL - use production domain for SEO consistency
-      const host = req.get('host') || 'www.pingjob.com';
-      const isProduction = host === 'www.pingjob.com' || host === 'pingjob.com';
-      const baseUrl = isProduction 
-        ? 'https://www.pingjob.com' 
-        : `${req.get('x-forwarded-proto') || req.protocol || 'https'}://${host}`;
+      // Get base URL from request
+      const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+      const host = req.get('host') || 'pingjob.com';
+      const baseUrl = `${protocol}://${host}`;
       
       // Generate canonical URL and redirect
       const canonicalPath = generateJobUrl(jobId, jobData.title);
