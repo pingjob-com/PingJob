@@ -54,17 +54,8 @@ setupSimpleAuth(app);
 
 // Serve ads.txt file for Google AdSense verification (HIGHEST PRIORITY)
 app.get('/ads.txt', (req, res) => {
-  // Only serve ads.txt on production domain
-  const host = req.get('host') || '';
-  const isProduction = host === 'www.pingjob.com';
-  
-  if (!isProduction) {
-    console.log(`ads.txt blocked for host: ${host}`);
-    return res.status(404).send('Not Found - ads.txt only available on www.pingjob.com');
-  }
-  
-  console.log(`ads.txt served for production host: ${host}`);
-  res.setHeader('Content-Type', 'text/plain');
+  console.log(`📋 ads.txt requested from host: ${req.get('host')}`);
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=86400');
   res.send('google.com, pub-9555763610767023, DIRECT, f08c47fec0942fa0');
 });
