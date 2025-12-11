@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 declare global {
   interface Window {
@@ -15,66 +15,62 @@ interface GoogleAdManagerProps {
 
 const AD_CONFIG = {
   responsive_in_feed: {
-    slotPath: '/23331199163/responsive_in_feed',
-    size: 'fluid' as const,
-    divId: 'div-gpt-ad-responsive-in-feed',
+    slotPath: '/23331199163/responsive_in-feed',
+    size: ['fluid'],
     style: { minHeight: '100px', width: '100%' }
   },
   medium_rectangle: {
     slotPath: '/23331199163/medium_ractangle',
-    size: [300, 250] as [number, number],
-    divId: 'div-gpt-ad-medium-rectangle',
+    size: [[300, 250]],
     style: { minWidth: '300px', minHeight: '250px' }
   },
   leaderboard: {
     slotPath: '/23331199163/leaderboard',
-    size: [728, 90] as [number, number],
-    divId: 'div-gpt-ad-leaderboard',
+    size: [[728, 90]],
     style: { minWidth: '728px', minHeight: '90px' }
   },
   wide_skyscraper: {
     slotPath: '/23331199163/wide_skycraper',
-    size: [160, 600] as [number, number],
-    divId: 'div-gpt-ad-wide-skyscraper',
+    size: [[160, 600]],
     style: { minWidth: '160px', minHeight: '600px' }
   }
 };
 
-let slotCounter = 0;
+let globalSlotCounter = 0;
 
 export default function GoogleAdManager({ slotType, className = '' }: GoogleAdManagerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const slotRef = useRef<any>(null);
-  const uniqueId = useRef(`${AD_CONFIG[slotType].divId}-${++slotCounter}`);
+  const [divId] = useState(() => `gpt-ad-${slotType}-${++globalSlotCounter}-${Date.now()}`);
+  const isInitialized = useRef(false);
 
   useEffect(() => {
+    if (isInitialized.current) return;
+    
     const config = AD_CONFIG[slotType];
     
-    if (typeof window === 'undefined' || !window.googletag) {
-      return;
-    }
+    if (typeof window === 'undefined') return;
+    
+    window.googletag = window.googletag || { cmd: [] };
 
     window.googletag.cmd.push(() => {
       try {
-        if (slotRef.current) {
-          window.googletag.destroySlots([slotRef.current]);
-        }
-
-        const size = config.size === 'fluid' ? ['fluid'] : config.size;
-        slotRef.current = window.googletag.defineSlot(
-          config.slotPath,
-          size,
-          uniqueId.current
-        );
-        
-        if (slotRef.current) {
-          slotRef.current.addService(window.googletag.pubads());
-          window.googletag.display(uniqueId.current);
+        if (!slotRef.current) {
+          slotRef.current = window.googletag.defineSlot(
+            config.slotPath,
+            config.size,
+            divId
+          );
+          
+          if (slotRef.current) {
+            slotRef.current.addService(window.googletag.pubads());
+            window.googletag.display(divId);
+            window.googletag.pubads().refresh([slotRef.current]);
+            isInitialized.current = true;
+          }
         }
       } catch (error) {
-        if (import.meta.env.DEV) {
-          console.error('GAM error:', error);
-        }
+        console.error('GAM slot error:', error);
       }
     });
 
@@ -84,42 +80,22 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
           try {
             window.googletag.destroySlots([slotRef.current]);
             slotRef.current = null;
+            isInitialized.current = false;
           } catch (error) {
-            // Ignore cleanup errors
           }
         });
       }
     };
-  }, [slotType]);
+  }, [slotType, divId]);
 
   const config = AD_CONFIG[slotType];
 
   return (
     <div 
       ref={containerRef}
-      id={uniqueId.current}
+      id={divId}
       className={className}
       style={config.style}
     />
   );
-}
-
-export function initializeGAM() {
-  if (typeof window === 'undefined') return;
-
-  window.googletag = window.googletag || { cmd: [] };
-  
-  if (!document.querySelector('script[src*="securepubads.g.doubleclick.net"]')) {
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = 'https://securepubads.g.doubleclick.net/tag/js/gpt.js';
-    script.crossOrigin = 'anonymous';
-    document.head.appendChild(script);
-  }
-
-  window.googletag.cmd.push(() => {
-    window.googletag.pubads().enableSingleRequest();
-    window.googletag.pubads().collapseEmptyDivs();
-    window.googletag.enableServices();
-  });
 }
