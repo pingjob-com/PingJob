@@ -50,6 +50,7 @@ import { resolveLogoUrl } from "@/lib/apiConfig";
 import { JobCategories } from "@/components/job-categories";
 import Footer from "../components/footer";
 import GoogleAdsense from "@/components/ads/GoogleAdsense";
+import GoogleAdManager from "@/components/ads/GoogleAdManager";
 
 // Helper function to format location - shows real location data when available
 const formatJobLocation = (job: any) => {
@@ -999,7 +1000,11 @@ export default function PingJobHome() {
                         {/* Desktop ad placement after every 4 jobs (full row in 4-column grid) */}
                         {(index + 1) % 4 === 0 && (
                           <div key={`ad-${index}`} className="col-span-1 md:col-span-2 lg:col-span-4 my-4">
-                            <GoogleAdsense adSlot="3731759815" />
+                            {user ? (
+                              <GoogleAdsense adSlot="3731759815" />
+                            ) : (
+                              <GoogleAdManager slotType="responsive_in_feed" />
+                            )}
                           </div>
                         )}
                       </>
@@ -1008,7 +1013,11 @@ export default function PingJobHome() {
 
                   {/* Ad placement before pagination */}
                   <div className="my-8 lg:col-span-4">
-                    <GoogleAdsense adSlot="3731759815" />
+                    {user ? (
+                      <GoogleAdsense adSlot="3731759815" />
+                    ) : (
+                      <GoogleAdManager slotType="responsive_in_feed" />
+                    )}
                   </div>
                 </>
               ) : (
@@ -1173,7 +1182,11 @@ export default function PingJobHome() {
                     {/* Mobile ad placement after every 2 jobs */}
                     {(index + 1) % 2 === 0 && (
                       <div className="col-span-1 sm:col-span-2 my-4">
-                        <GoogleAdsense adSlot="3731759815" />
+                        {user ? (
+                          <GoogleAdsense adSlot="3731759815" />
+                        ) : (
+                          <GoogleAdManager slotType="responsive_in_feed" />
+                        )}
                       </div>
                     )}
                   </>
@@ -1182,7 +1195,11 @@ export default function PingJobHome() {
 
               {/* Ad placement before mobile pagination */}
               <div className="my-6">
-                <GoogleAdsense adSlot="3731759815" />
+                {user ? (
+                  <GoogleAdsense adSlot="3731759815" />
+                ) : (
+                  <GoogleAdManager slotType="responsive_in_feed" />
+                )}
               </div>
             </>
           )}
@@ -1234,7 +1251,11 @@ export default function PingJobHome() {
 
       {/* Ad placement before footer */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <GoogleAdsense adSlot="3731759815" />
+        {user ? (
+          <GoogleAdsense adSlot="3731759815" />
+        ) : (
+          <GoogleAdManager slotType="leaderboard" />
+        )}
       </div>
 
       {/* Footer */}
