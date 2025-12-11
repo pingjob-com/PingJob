@@ -12,6 +12,7 @@ const logoPath = 'https://cdn.pingjob.com/logo.png';
 import { formatDescription } from "@/lib/format-description";
 import { resolveLogoUrl } from "@/lib/apiConfig";
 import GoogleAdsense from "@/components/ads/GoogleAdsense";
+import GoogleAdManager from "@/components/ads/GoogleAdManager";
 
 export default function JobsOriginal() {
   const { user } = useAuth();
@@ -462,14 +463,14 @@ export default function JobsOriginal() {
                       {/* Mobile Ad after every 2 jobs for non-logged-in users - same width as job card */}
                       {!user && (index + 1) % 2 === 0 && index < currentJobs.length - 1 && (
                         <div className="my-6 md:hidden">
-                          <GoogleAdsense adSlot="3731759815" />
+                          <GoogleAdManager slotType="responsive_in_feed" />
                         </div>
                       )}
                       
                       {/* Desktop Ad after every 2 jobs for non-logged-in users */}
                       {!user && (index + 1) % 2 === 0 && index < currentJobs.length - 1 && (
                         <div className="hidden md:block my-6 w-full">
-                          <GoogleAdsense adSlot="3731759815" />
+                          <GoogleAdManager slotType="responsive_in_feed" />
                         </div>
                       )}
                     </div>

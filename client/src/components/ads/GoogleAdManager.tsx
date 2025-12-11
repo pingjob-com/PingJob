@@ -94,19 +94,6 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
 
   const config = AD_CONFIG[slotType];
 
-  if (import.meta.env.DEV) {
-    return (
-      <div 
-        className={`bg-blue-50 border-2 border-dashed border-blue-300 flex items-center justify-center min-h-[100px] w-full rounded-lg ${className}`}
-        style={config.style}
-      >
-        <span className="text-blue-600 text-sm font-medium">
-          📊 Google Ad Manager: {slotType}
-        </span>
-      </div>
-    );
-  }
-
   return (
     <div 
       ref={containerRef}
