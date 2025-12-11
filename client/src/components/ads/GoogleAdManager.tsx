@@ -15,7 +15,7 @@ interface GoogleAdManagerProps {
 
 const AD_CONFIG = {
   responsive_in_feed: {
-    slotPath: '/23331199163/responsive_in-feed',
+    slotPath: '/23331199163/responsive_in_feed',
     size: 'fluid' as const,
     divId: 'div-gpt-ad-responsive-in-feed',
     style: { minHeight: '100px', width: '100%' }
