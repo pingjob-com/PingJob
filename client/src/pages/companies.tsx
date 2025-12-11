@@ -26,6 +26,7 @@ import { Link, useLocation, useSearch } from "wouter";
 const logoPath = 'https://cdn.pingjob.com/logo.png';
 import SimpleFooter from "@/components/simple-footer";
 import GoogleAdsense from "@/components/ads/GoogleAdsense";
+import GoogleAdManager from "@/components/ads/GoogleAdManager";
 import { resolveLogoUrl } from "@/lib/apiConfig";
 import BackToTopButton from "@/components/back-to-top-button";
 import {
@@ -1256,7 +1257,7 @@ export default function CompaniesPage() {
                           {/* Ad placement after each row - non-logged-in users only on desktop */}
                           {!user && rowIndex < rows.length - 1 && (
                             <div key={`desktop-ad-${rowIndex}`} className="my-4">
-                              <GoogleAdsense adSlot="3731759815" />
+                              <GoogleAdManager slotType="responsive_in_feed" />
                             </div>
                           )}
                         </div>
@@ -1278,7 +1279,7 @@ export default function CompaniesPage() {
                         {/* Ad placement after every 2 companies - non-logged-in users only on mobile */}
                         {!user && (index + 1) % 2 === 0 && index < currentCompanies.length - 1 && (
                           <div key={`mobile-ad-${index}`} className="my-6">
-                            <GoogleAdsense adSlot="3731759815" />
+                            <GoogleAdManager slotType="responsive_in_feed" />
                           </div>
                         )}
                       </div>
