@@ -1250,11 +1250,11 @@ export default function PingJobHome() {
       </main>
 
       {/* Ad placement before footer */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-hidden">
         {user ? (
           <GoogleAdsense adSlot="3731759815" />
         ) : (
-          <GoogleAdManager slotType="leaderboard" />
+          <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
         )}
       </div>
 
