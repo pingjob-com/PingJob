@@ -20,8 +20,8 @@ const AD_CONFIG: Record<AdSlotType, {
 }> = {
   responsive_in_feed: {
     slotPath: '/23331199163/responsive_in-feed',
-    sizes: [[728, 90], [320, 50], [320, 100]],
-    style: { minHeight: '50px', width: '100%' }
+    sizes: [[970, 90], [728, 90], [320, 50], [320, 100]],
+    style: { minHeight: '90px', width: '100%', maxWidth: '100%' }
   },
   medium_rectangle: {
     slotPath: '/23331199163/medium_ractangle',
@@ -85,9 +85,9 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
         }
 
         const mapping = window.googletag.sizeMapping()
-          .addSize([1024, 0], [[728, 90]])
-          .addSize([768, 0], [[320, 100], [320, 50]])
-          .addSize([0, 0], [[320, 50], [320, 100]])
+          .addSize([1200, 0], [[970, 90], [728, 90]])
+          .addSize([768, 0], [[728, 90]])
+          .addSize([0, 0], [[320, 100], [320, 50]])
           .build();
         
         if (slotType === 'responsive_in_feed') {
