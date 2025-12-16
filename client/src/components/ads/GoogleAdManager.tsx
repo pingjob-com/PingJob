@@ -20,8 +20,8 @@ const AD_CONFIG: Record<AdSlotType, {
 }> = {
   responsive_in_feed: {
     slotPath: '/23331199163/responsive_in-feed',
-    sizes: [[300, 250], [320, 100], [336, 280]],
-    style: { minHeight: '100px', width: '100%', maxWidth: '336px', margin: '0 auto' }
+    sizes: [[728, 90], [320, 50], [320, 100]],
+    style: { minHeight: '50px', width: '100%' }
   },
   medium_rectangle: {
     slotPath: '/23331199163/medium_ractangle',
@@ -64,7 +64,6 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
       try {
         const container = document.getElementById(divId);
         if (!container) {
-          console.warn('GAM container not found:', divId);
           return;
         }
 
@@ -82,8 +81,17 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
         );
 
         if (!slot) {
-          console.error('Failed to define slot:', config.slotPath);
           return;
+        }
+
+        const mapping = window.googletag.sizeMapping()
+          .addSize([1024, 0], [[728, 90]])
+          .addSize([768, 0], [[320, 100], [320, 50]])
+          .addSize([0, 0], [[320, 50], [320, 100]])
+          .build();
+        
+        if (slotType === 'responsive_in_feed') {
+          slot.defineSizeMapping(mapping);
         }
 
         slot.addService(window.googletag.pubads());
@@ -91,8 +99,6 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
 
         window.googletag.display(divId);
         window.googletag.pubads().refresh([slot]);
-
-        console.log('GAM slot ready:', divId, config.slotPath, config.sizes);
       } catch (error) {
         console.error('GAM error:', error);
       }
