@@ -47,64 +47,80 @@ let instanceCounter = 0;
 export default function GoogleAdManager({ slotType, className = '' }: GoogleAdManagerProps) {
   const [divId] = useState(() => {
     instanceCounter++;
-    return `gam-${slotType.replace(/_/g, '-')}-${instanceCounter}`;
+    return `gam-${slotType.replace(/_/g, '-')}-${Date.now()}-${instanceCounter}`;
   });
   const slotRef = useRef<any>(null);
-  const mounted = useRef(false);
+  const isInitialized = useRef(false);
 
   useEffect(() => {
-    if (mounted.current) return;
-    mounted.current = true;
+    if (isInitialized.current) return;
+    isInitialized.current = true;
 
     const config = AD_CONFIG[slotType];
     
     if (typeof window === 'undefined') return;
     
+    // Ensure googletag exists
     window.googletag = window.googletag || { cmd: [] };
 
-    const initSlot = () => {
-      window.googletag.cmd.push(() => {
-        try {
-          const container = document.getElementById(divId);
-          if (!container) return;
-
-          const size = config.size === 'fluid' ? 'fluid' : config.size;
-          
-          const slot = window.googletag.defineSlot(
-            config.slotPath,
-            size,
-            divId
-          );
-          
-          if (slot) {
-            slot.addService(window.googletag.pubads());
-            slotRef.current = slot;
-            
-            window.googletag.display(divId);
-            window.googletag.pubads().refresh([slot]);
-          }
-        } catch (error) {
-          console.error('GAM slot init error:', error);
+    // Push slot definition into GPT command queue
+    window.googletag.cmd.push(function() {
+      try {
+        const container = document.getElementById(divId);
+        if (!container) {
+          console.warn('GAM container not found:', divId);
+          return;
         }
-      });
-    };
 
-    const checkAndInit = () => {
-      if (window.gamSlotsInitialized) {
-        initSlot();
-      } else {
-        setTimeout(checkAndInit, 100);
+        // Check if slot already exists for this div
+        const existingSlots = window.googletag.pubads().getSlots();
+        const existingSlot = existingSlots.find((s: any) => s.getSlotElementId() === divId);
+        if (existingSlot) {
+          console.log('Slot already exists, refreshing:', divId);
+          window.googletag.pubads().refresh([existingSlot]);
+          return;
+        }
+
+        // Define the slot
+        const slot = window.googletag.defineSlot(
+          config.slotPath,
+          config.size,
+          divId
+        );
+
+        if (!slot) {
+          console.error('Failed to define slot:', config.slotPath);
+          return;
+        }
+
+        // Add to pubads service
+        slot.addService(window.googletag.pubads());
+        slotRef.current = slot;
+
+        console.log('GAM slot defined:', divId, config.slotPath);
+
+        // Display the slot (creates the ad iframe)
+        window.googletag.display(divId);
+
+        // Refresh to fetch the ad
+        window.googletag.pubads().refresh([slot]);
+
+        console.log('GAM slot displayed and refreshed:', divId);
+      } catch (error) {
+        console.error('GAM slot initialization error:', error);
       }
-    };
-
-    checkAndInit();
+    });
 
     return () => {
-      if (slotRef.current && window.googletag) {
-        window.googletag.cmd.push(() => {
+      // Cleanup on unmount
+      if (slotRef.current && window.googletag && window.googletag.destroySlots) {
+        window.googletag.cmd.push(function() {
           try {
             window.googletag.destroySlots([slotRef.current]);
-          } catch (e) {}
+            console.log('GAM slot destroyed:', divId);
+          } catch (e) {
+            console.error('Error destroying slot:', e);
+          }
         });
       }
     };
@@ -120,7 +136,8 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
         ...config.style,
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        backgroundColor: 'transparent'
       }}
       data-ad-slot={slotType}
     />

@@ -46,15 +46,14 @@
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js" crossorigin="anonymous"></script>
     <script>
       window.googletag = window.googletag || {cmd: []};
-      window.gamSlotsInitialized = false;
-      window.gamDefinedSlots = {};
       googletag.cmd.push(function() {
-        googletag.pubads().enableSingleRequest();
         googletag.pubads().collapseEmptyDivs();
-        googletag.pubads().disableInitialLoad();
-        googletag.pubads().enableFluidWidth();
+        googletag.pubads().enableLazyLoad({
+          fetchMarginPercent: 200,
+          renderMarginPercent: 100,
+          mobileScaling: 2.0
+        });
         googletag.enableServices();
-        window.gamSlotsInitialized = true;
       });
     </script>
   </head>
