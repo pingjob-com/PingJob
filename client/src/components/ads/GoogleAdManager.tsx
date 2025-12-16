@@ -3,8 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 declare global {
   interface Window {
     googletag: any;
-    gamSlotsInitialized: boolean;
-    gamDefinedSlots: Record<string, any>;
   }
 }
 
@@ -17,27 +15,27 @@ interface GoogleAdManagerProps {
 
 const AD_CONFIG: Record<AdSlotType, {
   slotPath: string;
-  size: any;
+  sizes: number[][];
   style: React.CSSProperties;
 }> = {
   responsive_in_feed: {
     slotPath: '/23331199163/responsive_in-feed',
-    size: 'fluid',
-    style: { minHeight: '90px', width: '100%' }
+    sizes: [[300, 250], [320, 100], [336, 280]],
+    style: { minHeight: '100px', width: '100%', maxWidth: '336px', margin: '0 auto' }
   },
   medium_rectangle: {
     slotPath: '/23331199163/medium_ractangle',
-    size: [300, 250],
+    sizes: [[300, 250]],
     style: { minWidth: '300px', minHeight: '250px' }
   },
   leaderboard: {
     slotPath: '/23331199163/leaderboard',
-    size: [728, 90],
+    sizes: [[728, 90]],
     style: { minWidth: '728px', minHeight: '90px' }
   },
   wide_skyscraper: {
     slotPath: '/23331199163/wide_skycraper',
-    size: [160, 600],
+    sizes: [[160, 600]],
     style: { minWidth: '160px', minHeight: '600px' }
   }
 };
@@ -60,10 +58,8 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
     
     if (typeof window === 'undefined') return;
     
-    // Ensure googletag exists
     window.googletag = window.googletag || { cmd: [] };
 
-    // Push slot definition into GPT command queue
     window.googletag.cmd.push(function() {
       try {
         const container = document.getElementById(divId);
@@ -72,19 +68,16 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
           return;
         }
 
-        // Check if slot already exists for this div
         const existingSlots = window.googletag.pubads().getSlots();
         const existingSlot = existingSlots.find((s: any) => s.getSlotElementId() === divId);
         if (existingSlot) {
-          console.log('Slot already exists, refreshing:', divId);
           window.googletag.pubads().refresh([existingSlot]);
           return;
         }
 
-        // Define the slot
         const slot = window.googletag.defineSlot(
           config.slotPath,
-          config.size,
+          config.sizes,
           divId
         );
 
@@ -93,34 +86,24 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
           return;
         }
 
-        // Add to pubads service
         slot.addService(window.googletag.pubads());
         slotRef.current = slot;
 
-        console.log('GAM slot defined:', divId, config.slotPath);
-
-        // Display the slot (creates the ad iframe)
         window.googletag.display(divId);
-
-        // Refresh to fetch the ad
         window.googletag.pubads().refresh([slot]);
 
-        console.log('GAM slot displayed and refreshed:', divId);
+        console.log('GAM slot ready:', divId, config.slotPath, config.sizes);
       } catch (error) {
-        console.error('GAM slot initialization error:', error);
+        console.error('GAM error:', error);
       }
     });
 
     return () => {
-      // Cleanup on unmount
       if (slotRef.current && window.googletag && window.googletag.destroySlots) {
         window.googletag.cmd.push(function() {
           try {
             window.googletag.destroySlots([slotRef.current]);
-            console.log('GAM slot destroyed:', divId);
-          } catch (e) {
-            console.error('Error destroying slot:', e);
-          }
+          } catch (e) {}
         });
       }
     };
@@ -137,7 +120,7 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'transparent'
+        overflow: 'hidden'
       }}
       data-ad-slot={slotType}
     />
