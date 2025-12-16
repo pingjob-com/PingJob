@@ -20,7 +20,7 @@ const AD_CONFIG: Record<AdSlotType, {
 }> = {
   responsive_in_feed: {
     slotPath: '/23331199163/responsive_in-feed',
-    sizes: ['fluid', [970, 90], [728, 90], [320, 100], [320, 50]],
+    sizes: ['fluid'],
     style: { minHeight: '90px', width: '100%' }
   },
   medium_rectangle: {
@@ -86,9 +86,7 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
 
         if (slotType === 'responsive_in_feed') {
           const mapping = window.googletag.sizeMapping()
-            .addSize([1200, 0], ['fluid', [970, 90], [728, 90]])
-            .addSize([768, 0], ['fluid', [728, 90]])
-            .addSize([0, 0], ['fluid', [320, 100], [320, 50]])
+            .addSize([0, 0], ['fluid'])
             .build();
           slot.defineSizeMapping(mapping);
         }
@@ -133,17 +131,33 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
   const config = AD_CONFIG[slotType];
 
   return (
-    <div 
-      id={divId}
-      className={`gam-ad-container ${className}`}
-      style={{
-        ...config.style,
-        display: 'block',
-        width: '100%',
-        maxWidth: '100%',
-        textAlign: 'center'
-      }}
-      data-ad-slot={slotType}
-    />
+    <>
+      <style>{`
+        .gam-ad-container,
+        .gam-ad-container > div,
+        .gam-ad-container > div > div,
+        .gam-ad-container iframe {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .gam-ad-container > div[id^="google_ads"] {
+          width: 100% !important;
+          display: block !important;
+        }
+      `}</style>
+      <div 
+        id={divId}
+        className={`gam-ad-container ${className}`}
+        style={{
+          ...config.style,
+          display: 'block',
+          width: '100%',
+          maxWidth: '100%',
+          textAlign: 'center',
+          overflow: 'hidden'
+        }}
+        data-ad-slot={slotType}
+      />
+    </>
   );
 }
