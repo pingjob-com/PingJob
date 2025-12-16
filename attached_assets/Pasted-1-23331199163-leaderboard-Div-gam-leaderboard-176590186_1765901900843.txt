@@ -1,0 +1,111 @@
+1
+23331199163 >  
+leaderboard
+Div: gam-leaderboard-1765901860076-1Slot size: 728x90Out of Page: FalseService: Ad Manager
+Overlay status: Displayed
+565 ms to fetch
+Ad fetch count: 1
+Iframe type: FriendlyIframe
+Query ID: CPzP0ojBwpEDFSKnrAIdo64iDA
+The above Query ID can be sent to our support teams if you have concerns about the content or behavior of the delivered creative.
+
+Open Targeting Info ➕
+Open Ad Unit in Ad Manager | Delivery Diagnostics | Open Creative in New Window | Inspect Creative
+2
+23331199163 >  
+responsive_in-feed
+Div: gam-responsive-in-feed-1765901863381-2Slot size: 300x250, 320x100, 336x280Out of Page: FalseService: Ad Manager
+Overlay status: Displayed
+Ad fetch count: 0
+Iframe type: none
+Query ID: none
+Warnings:
+Ad unit did not fetch.
+
+Open Targeting Info ➕
+3
+23331199163 >  
+responsive_in-feed
+Div: gam-responsive-in-feed-1765901863383-3Slot size: 300x250, 320x100, 336x280Out of Page: FalseService: Ad Manager
+Overlay status: Displayed
+Ad fetch count: 0
+Iframe type: none
+Query ID: none
+Warnings:
+Ad unit did not fetch.
+
+Open Targeting Info ➕
+4
+23331199163 >  
+responsive_in-feed
+Div: gam-responsive-in-feed-1765901863384-4Slot size: 300x250, 320x100, 336x280Out of Page: FalseService: Ad Manager
+Overlay status: Displayed
+Ad fetch count: 0
+Iframe type: none
+Query ID: none
+Warnings:
+Ad unit did not fetch.
+
+Open Targeting Info ➕
+5
+23331199163 >  
+responsive_in-feed
+Div: gam-responsive-in-feed-1765901863385-5Slot size: 300x250, 320x100, 336x280Out of Page: FalseService: Ad Manager
+Overlay status: Displayed
+Ad fetch count: 0
+Iframe type: none
+Query ID: none
+Warnings:
+Ad unit did not fetch.
+
+Open Targeting Info ➕
+6
+23331199163 >  
+responsive_in-feed
+Div: gam-responsive-in-feed-1765901863386-6Slot size: 300x250, 320x100, 336x280Out of Page: FalseService: Ad Manager
+Overlay status: Displayed
+Ad fetch count: 0
+Iframe type: none
+Query ID: none
+Warnings:
+Ad unit did not fetch.
+
+Open Targeting Info ➕
+7
+23331199163 >  
+responsive_in-feed
+Div: gam-responsive-in-feed-1765901863387-7Slot size: 300x250, 320x100, 336x280Out of Page: FalseService: Ad Manager
+Overlay status: Displayed
+Ad fetch count: 0
+Iframe type: none
+Query ID: none
+Warnings:
+Ad unit did not fetch.
+
+Open Targeting Info ➕
+8
+23331199163 >  
+responsive_in-feed
+Div: gam-responsive-in-feed-1765901863388-8Slot size: 300x250, 320x100, 336x280Out of Page: FalseService: Ad Manager
+Overlay status: Displayed
+411 ms to fetch
+Ad fetch count: 1
+Iframe type: none
+Query ID: CMCEkovBwpEDFWaPrAIdKv4zjQ
+The above Query ID can be sent to our support teams if you have concerns about the content or behavior of the delivered creative.
+
+Open Targeting Info ➕
+Open Ad Unit in Ad Manager | Delivery Diagnostics | Open Creative in New Window | Inspect Creative
+9
+23331199163 >  
+responsive_in-feed
+Div: gam-responsive-in-feed-1765901863388-9Slot size: 300x250, 320x100, 336x280Out of Page: FalseService: Ad Manager
+Overlay status: Displayed
+555 ms to fetch
+Ad fetch count: 1
+Iframe type: none
+Query ID: CMON1YrBwpEDFUqlZgIdXcQqdg
+The above Query ID can be sent to our support teams if you have concerns about the content or behavior of the delivered creative.
+
+Open Targeting Info ➕
+Open Ad Unit in Ad Manager | De
