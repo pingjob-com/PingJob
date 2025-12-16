@@ -47,11 +47,36 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
     instanceCounter++;
     return `gam-${slotType.replace(/_/g, '-')}-${Date.now()}-${instanceCounter}`;
   });
+  const containerRef = useRef<HTMLDivElement>(null);
   const slotRef = useRef<any>(null);
   const isInitialized = useRef(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (isInitialized.current) return;
+    if (!containerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > 0) {
+            const rect = entry.boundingClientRect;
+            if (rect.width > 0 && rect.height > 0) {
+              setIsVisible(true);
+              observer.disconnect();
+            }
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible || isInitialized.current) return;
     isInitialized.current = true;
 
     const config = AD_CONFIG[slotType];
@@ -63,9 +88,10 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
     window.googletag.cmd.push(function() {
       try {
         const container = document.getElementById(divId);
-        if (!container) {
-          return;
-        }
+        if (!container) return;
+
+        const containerWidth = container.offsetWidth || container.clientWidth;
+        if (containerWidth === 0) return;
 
         const existingSlots = window.googletag.pubads().getSlots();
         const existingSlot = existingSlots.find((s: any) => s.getSlotElementId() === divId);
@@ -80,9 +106,7 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
           divId
         );
 
-        if (!slot) {
-          return;
-        }
+        if (!slot) return;
 
         if (slotType === 'responsive_in_feed') {
           const mapping = window.googletag.sizeMapping()
@@ -98,22 +122,6 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
 
         window.googletag.display(divId);
         window.googletag.pubads().refresh([slot]);
-
-        setTimeout(() => {
-          const adContainer = document.getElementById(divId);
-          if (adContainer) {
-            const iframe = adContainer.querySelector('iframe');
-            const innerDiv = adContainer.querySelector('div');
-            if (iframe) {
-              iframe.style.width = '100%';
-              iframe.style.maxWidth = '100%';
-            }
-            if (innerDiv) {
-              innerDiv.style.width = '100%';
-              innerDiv.style.maxWidth = '100%';
-            }
-          }
-        }, 1000);
       } catch (error) {
         console.error('GAM error:', error);
       }
@@ -128,12 +136,13 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
         });
       }
     };
-  }, [slotType, divId]);
+  }, [isVisible, slotType, divId]);
 
   const config = AD_CONFIG[slotType];
 
   return (
     <div 
+      ref={containerRef}
       className={`w-full flex justify-center ${className}`}
       style={{ width: '100%' }}
     >
