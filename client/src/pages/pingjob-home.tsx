@@ -999,11 +999,11 @@ export default function PingJobHome() {
 
                         {/* Desktop ad placement after every 4 jobs (full row in 4-column grid) */}
                         {(index + 1) % 4 === 0 && (
-                          <div key={`ad-${index}`} className="col-span-1 md:col-span-2 lg:col-span-4 my-4">
+                          <div key={`ad-${index}`} className="col-span-full w-full my-6">
                             {user ? (
                               <GoogleAdsense adSlot="3731759815" />
                             ) : (
-                              <GoogleAdManager slotType="responsive_in_feed" />
+                              <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
                             )}
                           </div>
                         )}
@@ -1012,11 +1012,11 @@ export default function PingJobHome() {
                   </div>
 
                   {/* Ad placement before pagination */}
-                  <div className="my-8 lg:col-span-4">
+                  <div className="col-span-full w-full my-8">
                     {user ? (
                       <GoogleAdsense adSlot="3731759815" />
                     ) : (
-                      <GoogleAdManager slotType="responsive_in_feed" />
+                      <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
                     )}
                   </div>
                 </>
@@ -1181,11 +1181,11 @@ export default function PingJobHome() {
                     
                     {/* Mobile ad placement after every 2 jobs */}
                     {(index + 1) % 2 === 0 && (
-                      <div className="col-span-1 sm:col-span-2 my-4">
+                      <div className="col-span-full w-full my-4">
                         {user ? (
                           <GoogleAdsense adSlot="3731759815" />
                         ) : (
-                          <GoogleAdManager slotType="responsive_in_feed" />
+                          <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
                         )}
                       </div>
                     )}
@@ -1194,11 +1194,11 @@ export default function PingJobHome() {
               </div>
 
               {/* Ad placement before mobile pagination */}
-              <div className="my-6">
+              <div className="w-full my-6">
                 {user ? (
                   <GoogleAdsense adSlot="3731759815" />
                 ) : (
-                  <GoogleAdManager slotType="responsive_in_feed" />
+                  <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
                 )}
               </div>
             </>

@@ -1256,8 +1256,8 @@ export default function CompaniesPage() {
                           
                           {/* Ad placement after each row - non-logged-in users only on desktop */}
                           {!user && rowIndex < rows.length - 1 && (
-                            <div key={`desktop-ad-${rowIndex}`} className="my-4">
-                              <GoogleAdManager slotType="responsive_in_feed" />
+                            <div key={`desktop-ad-${rowIndex}`} className="my-4 w-full">
+                              <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
                             </div>
                           )}
                         </div>
@@ -1278,8 +1278,8 @@ export default function CompaniesPage() {
                         
                         {/* Ad placement after every 2 companies - non-logged-in users only on mobile */}
                         {!user && (index + 1) % 2 === 0 && index < currentCompanies.length - 1 && (
-                          <div key={`mobile-ad-${index}`} className="my-6">
-                            <GoogleAdManager slotType="responsive_in_feed" />
+                          <div key={`mobile-ad-${index}`} className="my-6 w-full">
+                            <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
                           </div>
                         )}
                       </div>

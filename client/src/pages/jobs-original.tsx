@@ -460,17 +460,17 @@ export default function JobsOriginal() {
                         </CardContent>
                       </Card>
                       
-                      {/* Mobile Ad after every 2 jobs for non-logged-in users - same width as job card */}
+                      {/* Mobile Ad after every 2 jobs for non-logged-in users */}
                       {!user && (index + 1) % 2 === 0 && index < currentJobs.length - 1 && (
-                        <div className="my-6 md:hidden">
-                          <GoogleAdManager slotType="responsive_in_feed" />
+                        <div className="my-6 md:hidden w-full">
+                          <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
                         </div>
                       )}
                       
                       {/* Desktop Ad after every 2 jobs for non-logged-in users */}
                       {!user && (index + 1) % 2 === 0 && index < currentJobs.length - 1 && (
                         <div className="hidden md:block my-6 w-full">
-                          <GoogleAdManager slotType="responsive_in_feed" />
+                          <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
                         </div>
                       )}
                     </div>
