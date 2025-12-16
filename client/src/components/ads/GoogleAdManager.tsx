@@ -15,13 +15,13 @@ interface GoogleAdManagerProps {
 
 const AD_CONFIG: Record<AdSlotType, {
   slotPath: string;
-  sizes: number[][];
+  sizes: (number[] | string)[];
   style: React.CSSProperties;
 }> = {
   responsive_in_feed: {
     slotPath: '/23331199163/responsive_in-feed',
-    sizes: [[970, 90], [728, 90], [320, 50], [320, 100]],
-    style: { minHeight: '90px', width: '100%', maxWidth: '100%' }
+    sizes: ['fluid', [970, 90], [728, 90], [320, 100], [320, 50]],
+    style: { minHeight: '90px', width: '100%' }
   },
   medium_rectangle: {
     slotPath: '/23331199163/medium_ractangle',
@@ -84,13 +84,12 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
           return;
         }
 
-        const mapping = window.googletag.sizeMapping()
-          .addSize([1200, 0], [[970, 90], [728, 90]])
-          .addSize([768, 0], [[728, 90]])
-          .addSize([0, 0], [[320, 100], [320, 50]])
-          .build();
-        
         if (slotType === 'responsive_in_feed') {
+          const mapping = window.googletag.sizeMapping()
+            .addSize([1200, 0], ['fluid', [970, 90], [728, 90]])
+            .addSize([768, 0], ['fluid', [728, 90]])
+            .addSize([0, 0], ['fluid', [320, 100], [320, 50]])
+            .build();
           slot.defineSizeMapping(mapping);
         }
 
@@ -99,6 +98,22 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
 
         window.googletag.display(divId);
         window.googletag.pubads().refresh([slot]);
+
+        setTimeout(() => {
+          const adContainer = document.getElementById(divId);
+          if (adContainer) {
+            const iframe = adContainer.querySelector('iframe');
+            const innerDiv = adContainer.querySelector('div');
+            if (iframe) {
+              iframe.style.width = '100%';
+              iframe.style.maxWidth = '100%';
+            }
+            if (innerDiv) {
+              innerDiv.style.width = '100%';
+              innerDiv.style.maxWidth = '100%';
+            }
+          }
+        }, 1000);
       } catch (error) {
         console.error('GAM error:', error);
       }
@@ -123,10 +138,10 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
       className={`gam-ad-container ${className}`}
       style={{
         ...config.style,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden'
+        display: 'block',
+        width: '100%',
+        maxWidth: '100%',
+        textAlign: 'center'
       }}
       data-ad-slot={slotType}
     />
