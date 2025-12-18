@@ -23,9 +23,3 @@ Allow: /jobs/
 Allow: /companies/
 Allow: /categories/
 Allow: /
-
-# Crawl delay to prevent server overload
-Crawl-delay: 1
-
-# Request rate limit for search engines
-Request-rate: 30/60
