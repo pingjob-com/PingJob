@@ -21,7 +21,7 @@ const AD_CONFIG: Record<AdSlotType, {
   responsive_in_feed: {
     slotPath: '/23331199163/responsive_in-feed',
     sizes: [[970, 90], [728, 90], [320, 100], [320, 50]],
-    style: { minHeight: '90px', width: '100%' }
+    style: { minHeight: '100px', width: '100%' }
   },
   medium_rectangle: {
     slotPath: '/23331199163/medium_ractangle',
@@ -30,8 +30,8 @@ const AD_CONFIG: Record<AdSlotType, {
   },
   leaderboard: {
     slotPath: '/23331199163/leaderboard',
-    sizes: [[728, 90]],
-    style: { minWidth: '728px', minHeight: '90px' }
+    sizes: [[728, 90], [320, 50]],
+    style: { minHeight: '90px', width: '100%' }
   },
   wide_skyscraper: {
     slotPath: '/23331199163/wide_skycraper',
@@ -47,96 +47,85 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
     instanceCounter++;
     return `gam-${slotType.replace(/_/g, '-')}-${Date.now()}-${instanceCounter}`;
   });
-  const containerRef = useRef<HTMLDivElement>(null);
   const slotRef = useRef<any>(null);
-  const isInitialized = useRef(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio > 0) {
-            const rect = entry.boundingClientRect;
-            if (rect.width > 0 && rect.height > 0) {
-              setIsVisible(true);
-              observer.disconnect();
-            }
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(containerRef.current);
-
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!isVisible || isInitialized.current) return;
-    isInitialized.current = true;
-
     const config = AD_CONFIG[slotType];
     
     if (typeof window === 'undefined') return;
     
     window.googletag = window.googletag || { cmd: [] };
 
-    window.googletag.cmd.push(function() {
-      try {
-        const container = document.getElementById(divId);
-        if (!container) return;
+    const initAd = () => {
+      window.googletag.cmd.push(function() {
+        try {
+          const container = document.getElementById(divId);
+          if (!container) {
+            console.log('GAM: Container not found:', divId);
+            return;
+          }
 
-        const containerWidth = container.offsetWidth || container.clientWidth;
-        if (containerWidth === 0) return;
+          const existingSlots = window.googletag.pubads().getSlots();
+          const existingSlot = existingSlots.find((s: any) => s.getSlotElementId() === divId);
+          
+          if (existingSlot) {
+            console.log('GAM: Refreshing existing slot:', divId);
+            window.googletag.pubads().refresh([existingSlot]);
+            return;
+          }
 
-        const existingSlots = window.googletag.pubads().getSlots();
-        const existingSlot = existingSlots.find((s: any) => s.getSlotElementId() === divId);
-        if (existingSlot) {
-          window.googletag.pubads().refresh([existingSlot]);
-          return;
+          console.log('GAM: Defining new slot:', config.slotPath, 'sizes:', config.sizes, 'divId:', divId);
+          
+          const slot = window.googletag.defineSlot(
+            config.slotPath,
+            config.sizes,
+            divId
+          );
+
+          if (!slot) {
+            console.log('GAM: Failed to define slot');
+            return;
+          }
+
+          if (slotType === 'responsive_in_feed' || slotType === 'leaderboard') {
+            const mapping = window.googletag.sizeMapping()
+              .addSize([970, 0], [[970, 90], [728, 90]])
+              .addSize([728, 0], [[728, 90]])
+              .addSize([0, 0], [[320, 100], [320, 50]])
+              .build();
+            slot.defineSizeMapping(mapping);
+            console.log('GAM: Size mapping applied');
+          }
+
+          slot.addService(window.googletag.pubads());
+          slotRef.current = slot;
+
+          window.googletag.display(divId);
+          console.log('GAM: Display called for:', divId);
+
+        } catch (error) {
+          console.error('GAM error:', error);
         }
+      });
+    };
 
-        const slot = window.googletag.defineSlot(
-          config.slotPath,
-          config.sizes,
-          divId
-        );
-
-        if (!slot) return;
-
-        if (slotType === 'responsive_in_feed') {
-          const mapping = window.googletag.sizeMapping()
-            .addSize([1000, 0], [[970, 90], [728, 90]])
-            .addSize([750, 0], [[728, 90]])
-            .addSize([0, 0], [[320, 100], [320, 50]])
-            .build();
-          slot.defineSizeMapping(mapping);
-        }
-
-        slot.addService(window.googletag.pubads());
-        slotRef.current = slot;
-
-        window.googletag.display(divId);
-        window.googletag.pubads().refresh([slot]);
-      } catch (error) {
-        console.error('GAM error:', error);
-      }
-    });
+    const timer = setTimeout(initAd, 100);
 
     return () => {
+      clearTimeout(timer);
       if (slotRef.current && window.googletag && window.googletag.destroySlots) {
         window.googletag.cmd.push(function() {
           try {
             window.googletag.destroySlots([slotRef.current]);
-          } catch (e) {}
+            slotRef.current = null;
+          } catch (e) {
+            console.error('GAM cleanup error:', e);
+          }
         });
       }
     };
-  }, [isVisible, slotType, divId]);
+  }, [slotType, divId]);
 
   const config = AD_CONFIG[slotType];
 
@@ -144,7 +133,7 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
     <div 
       ref={containerRef}
       className={`w-full flex justify-center ${className}`}
-      style={{ width: '100%' }}
+      style={{ width: '100%', minWidth: '320px' }}
     >
       <div 
         id={divId}
@@ -152,7 +141,8 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
         style={{
           ...config.style,
           display: 'block',
-          textAlign: 'center'
+          textAlign: 'center',
+          minWidth: '320px'
         }}
         data-ad-slot={slotType}
       />
