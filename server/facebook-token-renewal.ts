@@ -43,6 +43,8 @@ export class FacebookTokenRenewer {
       const expiresIn = data.expires_in || 5184000; // Default: 60 days in seconds (5184000)
       const expiresInDays = Math.round(expiresIn / (24 * 60 * 60));
       
+      const expiresAt = new Date(Date.now() + expiresIn * 1000);
+
       console.log(`✅ Facebook token refreshed successfully`);
       console.log(`⏰ New token expires in: ${expiresInDays} days (${expiresIn} seconds)`);
       console.log(`🔑 Token preview: ${data.access_token.substring(0, 20)}...`);
