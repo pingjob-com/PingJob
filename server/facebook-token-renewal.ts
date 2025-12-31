@@ -84,7 +84,7 @@ export class FacebookTokenRenewer {
         console.log(`📅 Expiry date: ${token.expiresAt.toISOString()}`);
 
         // Renew if expires in 2 days or less (48 hours)
-        if (true) {
+        if (hoursUntilExpiry <= 48) {
           try {
             console.log(`🔴 CRITICAL: Token expiring in ${daysUntilExpiry} days! Starting auto-renewal...`);
             const { accessToken, expiresIn } = await this.refreshFacebookToken(token.accessToken);
