@@ -30,7 +30,7 @@ const AD_CONFIG: Record<AdSlotType, {
   },
   leaderboard: {
     slotPath: '/23331199163/leaderboard',
-    sizes: [[728, 90], [320, 50]],
+    sizes: [[970, 90], [728, 90], [320, 100], [320, 50]],
     style: { minHeight: '90px', width: '100%' }
   },
   wide_skyscraper: {
@@ -60,57 +60,48 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
     const initAd = () => {
       window.googletag.cmd.push(function() {
         try {
-          const container = document.getElementById(divId);
-          if (!container) {
-            console.log('GAM: Container not found:', divId);
-            return;
-          }
-
+          // If the page already has a slot for this divId, we should refresh it instead of defining it again
           const existingSlots = window.googletag.pubads().getSlots();
           const existingSlot = existingSlots.find((s: any) => s.getSlotElementId() === divId);
           
           if (existingSlot) {
-            console.log('GAM: Refreshing existing slot:', divId);
             window.googletag.pubads().refresh([existingSlot]);
             return;
           }
 
-          console.log('GAM: Defining new slot:', config.slotPath, 'sizes:', config.sizes, 'divId:', divId);
-          
           const slot = window.googletag.defineSlot(
             config.slotPath,
             config.sizes,
             divId
           );
 
-          if (!slot) {
-            console.log('GAM: Failed to define slot');
-            return;
-          }
+          if (!slot) return;
 
-          if (slotType === 'responsive_in_feed' || slotType === 'leaderboard') {
-            const mapping = window.googletag.sizeMapping()
-              .addSize([970, 0], [[970, 90], [728, 90]])
-              .addSize([728, 0], [[728, 90]])
-              .addSize([0, 0], [[320, 100], [320, 50]])
-              .build();
-            slot.defineSizeMapping(mapping);
-            console.log('GAM: Size mapping applied');
-          }
-
+          // Define responsive size mapping
+          const mapping = window.googletag.sizeMapping()
+            .addSize([1024, 0], [[970, 90], [728, 90]])
+            .addSize([768, 0], [[728, 90]])
+            .addSize([0, 0], [[320, 100], [320, 50]])
+            .build();
+          
+          slot.defineSizeMapping(mapping);
           slot.addService(window.googletag.pubads());
           slotRef.current = slot;
 
+          // Crucial: Set collapseEmptyDivs at the slot level to ensure it takes up space even if delayed
+          slot.setCollapseMode(false);
+
           window.googletag.display(divId);
-          console.log('GAM: Display called for:', divId);
+          window.googletag.pubads().refresh([slot]);
 
         } catch (error) {
-          console.error('GAM error:', error);
+          console.error('GAM Error:', error);
         }
       });
     };
 
-    const timer = setTimeout(initAd, 100);
+    // Use a small timeout to ensure the DOM is ready and IDs are correctly assigned
+    const timer = setTimeout(initAd, 50);
 
     return () => {
       clearTimeout(timer);
@@ -132,8 +123,8 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
   return (
     <div 
       ref={containerRef}
-      className={`w-full flex justify-center ${className}`}
-      style={{ width: '100%', minWidth: '320px' }}
+      className={`w-full flex justify-center py-4 ${className}`}
+      style={{ width: '100%', minWidth: '320px', minHeight: config.style.minHeight }}
     >
       <div 
         id={divId}
@@ -142,9 +133,10 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
           ...config.style,
           display: 'block',
           textAlign: 'center',
-          minWidth: '320px'
+          margin: '0 auto',
+          width: '100%',
+          maxWidth: '100%'
         }}
-        data-ad-slot={slotType}
       />
     </div>
   );

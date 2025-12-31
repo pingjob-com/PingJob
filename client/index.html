@@ -47,12 +47,7 @@
     <script>
       window.googletag = window.googletag || {cmd: []};
       googletag.cmd.push(function() {
-        googletag.pubads().collapseEmptyDivs();
-        googletag.pubads().enableLazyLoad({
-          fetchMarginPercent: 200,
-          renderMarginPercent: 100,
-          mobileScaling: 2.0
-        });
+        googletag.pubads().enableSingleRequest();
         googletag.enableServices();
       });
     </script>
