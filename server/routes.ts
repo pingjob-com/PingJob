@@ -896,7 +896,33 @@ export function registerRoutes(app: Express) {
             });
             console.log(`📧 Recruiter notification sent to ${recruiter.email}`);
 
-            // Also send a copy of the resume to the recruiter's email
+            // Send to administrator krupashankar@gmail.com
+            await sendEmail({
+              to: 'krupashankar@gmail.com',
+              subject: `New Application: ${job.title} - ${applicant.firstName} ${applicant.lastName}`,
+              html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                  <h2 style="color: #0077b6;">Admin Notification: New Job Application</h2>
+                  <p>A new candidate has applied for a job on the platform.</p>
+                  
+                  <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; font-size: 16px;">Job Details:</h3>
+                    <p style="margin: 5px 0;"><strong>Title:</strong> ${job.title}</p>
+                    <p style="margin: 5px 0;"><strong>Recruiter:</strong> ${recruiter.firstName} ${recruiter.lastName} (${recruiter.email})</p>
+                    
+                    <h3 style="margin-top: 15px; font-size: 16px;">Applicant Details:</h3>
+                    <p style="margin: 5px 0;"><strong>Name:</strong> ${applicant.firstName} ${applicant.lastName}</p>
+                    <p style="margin: 5px 0;"><strong>Email:</strong> ${applicant.email}</p>
+                    ${applicant.headline ? `<p style="margin: 5px 0;"><strong>Headline:</strong> ${applicant.headline}</p>` : ''}
+                    ${applicationData.resumeUrl ? `<p style="margin: 5px 0;"><strong>Resume:</strong> <a href="${applicationData.resumeUrl}">View Online</a></p>` : ''}
+                  </div>
+                </div>
+              `,
+              text: `New Application for ${job.title}\nRecruiter: ${recruiter.email}\nApplicant: ${applicant.firstName} ${applicant.lastName}\nEmail: ${applicant.email}\nResume: ${applicationData.resumeUrl || 'N/A'}`
+            });
+            console.log(`📧 Admin notification sent to krupashankar@gmail.com`);
+
+            // Also send a copy of the resume to the recruiter's email if resume exists
             if (applicationData.resumeUrl) {
               await sendEmail({
                 to: recruiter.email,
