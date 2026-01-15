@@ -895,6 +895,24 @@ export function registerRoutes(app: Express) {
               text: `New Application for ${job.title}\n\nApplicant: ${applicant.firstName} ${applicant.lastName}\nEmail: ${applicant.email}\n\nView details in your dashboard: https://www.pingjob.com/recruiter/dashboard`
             });
             console.log(`📧 Recruiter notification sent to ${recruiter.email}`);
+
+            // Also send a copy of the resume to the recruiter's email
+            if (applicationData.resumeUrl) {
+              await sendEmail({
+                to: recruiter.email,
+                subject: `Resume: ${applicant.firstName} ${applicant.lastName} - ${job.title}`,
+                html: `
+                  <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                    <h2 style="color: #0077b6;">Candidate Resume</h2>
+                    <p>Hello ${recruiter.firstName || 'Recruiter'},</p>
+                    <p>Attached is the resume for <strong>${applicant.firstName} ${applicant.lastName}</strong> who applied for <strong>${job.title}</strong>.</p>
+                    <p>You can also view this resume online at: <a href="${applicationData.resumeUrl}">${applicationData.resumeUrl}</a></p>
+                  </div>
+                `,
+                text: `Attached is the resume for ${applicant.firstName} ${applicant.lastName} who applied for ${job.title}.\n\nView online: ${applicationData.resumeUrl}`
+              });
+              console.log(`📧 Resume link sent to ${recruiter.email}`);
+            }
           }
         }
       } catch (emailError) {
