@@ -862,7 +862,7 @@ export function registerRoutes(app: Express) {
       
       // ✅ Send email notification to recruiter
       try {
-        const job = await storage.getJob(applicationData.jobId);
+        const job = await storage.getJobById(applicationData.jobId);
         if (job && job.recruiterId) {
           const recruiter = await storage.getUserProfile(job.recruiterId);
           if (recruiter && recruiter.email) {
