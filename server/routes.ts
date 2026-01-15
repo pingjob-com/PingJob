@@ -860,15 +860,60 @@ export function registerRoutes(app: Express) {
       
       const application = await storage.createJobApplication(applicationData);
       
-      // ✅ Send email notification to recruiter
+      // ✅ Send email notification to admin and recruiter (if exists)
       try {
-        const job = await storage.getJobById(applicationData.jobId);
+        const { sendEmail } = await import('./email');
+        const applicant = req.user;
+        
+        // Get job details - may be null if lookup fails
+        let job = null;
+        try {
+          job = await storage.getJobById(applicationData.jobId);
+        } catch (jobLookupError) {
+          console.error('⚠️ Failed to lookup job for email notification:', jobLookupError);
+        }
+        
+        // ALWAYS send to admin (krupashankar@gmail.com) - even if job lookup fails
+        const jobTitle = job?.title || `Job #${applicationData.jobId}`;
+        const companyName = job?.company?.name || 'N/A';
+        
+        console.log(`📧 Sending admin notification for job application: ${jobTitle}`);
+        
+        const adminEmailResult = await sendEmail({
+          to: 'krupashankar@gmail.com',
+          subject: `New Application: ${jobTitle} - ${applicant.firstName} ${applicant.lastName}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #0077b6;">Admin Notification: New Job Application</h2>
+              <p>A new candidate has applied for a job on the platform.</p>
+              
+              <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0; font-size: 16px;">Job Details:</h3>
+                <p style="margin: 5px 0;"><strong>Title:</strong> ${jobTitle}</p>
+                <p style="margin: 5px 0;"><strong>Company:</strong> ${companyName}</p>
+                <p style="margin: 5px 0;"><strong>Job ID:</strong> ${applicationData.jobId}</p>
+                
+                <h3 style="margin-top: 15px; font-size: 16px;">Applicant Details:</h3>
+                <p style="margin: 5px 0;"><strong>Name:</strong> ${applicant.firstName} ${applicant.lastName}</p>
+                <p style="margin: 5px 0;"><strong>Email:</strong> ${applicant.email}</p>
+                ${applicant.headline ? `<p style="margin: 5px 0;"><strong>Headline:</strong> ${applicant.headline}</p>` : ''}
+                ${applicationData.resumeUrl ? `<p style="margin: 5px 0;"><strong>Resume:</strong> <a href="${applicationData.resumeUrl}">View Online</a></p>` : ''}
+              </div>
+            </div>
+          `,
+          text: `New Application for ${jobTitle}\nJob ID: ${applicationData.jobId}\nCompany: ${companyName}\nApplicant: ${applicant.firstName} ${applicant.lastName}\nEmail: ${applicant.email}\nResume: ${applicationData.resumeUrl || 'N/A'}`
+        });
+        
+        if (adminEmailResult) {
+          console.log(`✅ Admin notification sent successfully to krupashankar@gmail.com`);
+        } else {
+          console.error(`❌ Admin notification failed to send to krupashankar@gmail.com`);
+        }
+        
+        // Also notify recruiter if job has one
         if (job && job.recruiterId) {
           const recruiter = await storage.getUserProfile(job.recruiterId);
           if (recruiter && recruiter.email) {
-            const { sendEmail } = await import('./email');
-            const applicant = req.user;
-            
             await sendEmail({
               to: recruiter.email,
               subject: `New Application: ${job.title}`,
@@ -896,32 +941,6 @@ export function registerRoutes(app: Express) {
             });
             console.log(`📧 Recruiter notification sent to ${recruiter.email}`);
 
-            // Send to administrator krupashankar@gmail.com
-            await sendEmail({
-              to: 'krupashankar@gmail.com',
-              subject: `New Application: ${job.title} - ${applicant.firstName} ${applicant.lastName}`,
-              html: `
-                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                  <h2 style="color: #0077b6;">Admin Notification: New Job Application</h2>
-                  <p>A new candidate has applied for a job on the platform.</p>
-                  
-                  <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                    <h3 style="margin-top: 0; font-size: 16px;">Job Details:</h3>
-                    <p style="margin: 5px 0;"><strong>Title:</strong> ${job.title}</p>
-                    <p style="margin: 5px 0;"><strong>Recruiter:</strong> ${recruiter.firstName} ${recruiter.lastName} (${recruiter.email})</p>
-                    
-                    <h3 style="margin-top: 15px; font-size: 16px;">Applicant Details:</h3>
-                    <p style="margin: 5px 0;"><strong>Name:</strong> ${applicant.firstName} ${applicant.lastName}</p>
-                    <p style="margin: 5px 0;"><strong>Email:</strong> ${applicant.email}</p>
-                    ${applicant.headline ? `<p style="margin: 5px 0;"><strong>Headline:</strong> ${applicant.headline}</p>` : ''}
-                    ${applicationData.resumeUrl ? `<p style="margin: 5px 0;"><strong>Resume:</strong> <a href="${applicationData.resumeUrl}">View Online</a></p>` : ''}
-                  </div>
-                </div>
-              `,
-              text: `New Application for ${job.title}\nRecruiter: ${recruiter.email}\nApplicant: ${applicant.firstName} ${applicant.lastName}\nEmail: ${applicant.email}\nResume: ${applicationData.resumeUrl || 'N/A'}`
-            });
-            console.log(`📧 Admin notification sent to krupashankar@gmail.com`);
-
             // Also send a copy of the resume to the recruiter's email if resume exists
             if (applicationData.resumeUrl) {
               await sendEmail({
@@ -942,7 +961,7 @@ export function registerRoutes(app: Express) {
           }
         }
       } catch (emailError) {
-        console.error('❌ Failed to send recruiter notification email:', emailError);
+        console.error('❌ Failed to send notification email:', emailError);
       }
       
       // ✅ AUTOMATICALLY TRIGGER RESUME SCORING for ALL applications (including recruiter jobs)
