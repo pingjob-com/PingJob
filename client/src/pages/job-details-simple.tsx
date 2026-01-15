@@ -408,7 +408,12 @@ export default function JobDetailsSimple() {
               {(job as any).companyName || job.company?.name || 'Unknown Company'}
             </p>
             <p className="text-sm sm:text-base text-gray-600 mb-4">
-              {job.location || 'Location not specified'}
+              {(() => {
+                const parts = [job.city, job.state].filter(Boolean);
+                if (job.zipCode) parts.push(job.zipCode);
+                if (parts.length === 0 && job.country) return job.country;
+                return parts.join(', ') || job.location || 'Location not specified';
+              })()}
             </p>
             <div className="prose max-w-none">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Job Description</h3>

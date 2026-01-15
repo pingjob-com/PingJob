@@ -70,6 +70,7 @@ export default function JobEditModal({ job, isOpen, onClose }: JobEditModalProps
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    requirements: "",
     location: "",
     city: "",
     state: "",
@@ -89,6 +90,7 @@ export default function JobEditModal({ job, isOpen, onClose }: JobEditModalProps
       setFormData({
         title: job.title || "",
         description: job.description || "",
+        requirements: job.requirements || "",
         location: job.location || "",
         city: job.city || "",
         state: job.state || "",
@@ -388,6 +390,18 @@ export default function JobEditModal({ job, isOpen, onClose }: JobEditModalProps
               className="min-h-[120px]"
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
+            />
+          </div>
+
+          {/* Requirements */}
+          <div>
+            <Label htmlFor="requirements">Requirements</Label>
+            <Textarea
+              id="requirements"
+              placeholder="Enter job requirements (skills, qualifications, experience, etc.)"
+              className="min-h-[120px]"
+              value={formData.requirements}
+              onChange={(e) => handleInputChange('requirements', e.target.value)}
             />
           </div>
 
