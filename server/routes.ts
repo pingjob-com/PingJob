@@ -860,6 +860,47 @@ export function registerRoutes(app: Express) {
       
       const application = await storage.createJobApplication(applicationData);
       
+      // ✅ Send email notification to recruiter
+      try {
+        const job = await storage.getJob(applicationData.jobId);
+        if (job && job.recruiterId) {
+          const recruiter = await storage.getUserProfile(job.recruiterId);
+          if (recruiter && recruiter.email) {
+            const { sendEmail } = await import('./email');
+            const applicant = req.user;
+            
+            await sendEmail({
+              to: recruiter.email,
+              subject: `New Application: ${job.title}`,
+              html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                  <h2 style="color: #0077b6;">New Job Application Received</h2>
+                  <p>Hello ${recruiter.firstName || 'Recruiter'},</p>
+                  <p>A new candidate has applied for your job posting: <strong>${job.title}</strong></p>
+                  
+                  <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; font-size: 16px;">Applicant Details:</h3>
+                    <p style="margin: 5px 0;"><strong>Name:</strong> ${applicant.firstName} ${applicant.lastName}</p>
+                    <p style="margin: 5px 0;"><strong>Email:</strong> ${applicant.email}</p>
+                    ${applicant.headline ? `<p style="margin: 5px 0;"><strong>Headline:</strong> ${applicant.headline}</p>` : ''}
+                  </div>
+                  
+                  <p>You can view the full application and resume in your recruiter dashboard.</p>
+                  
+                  <div style="margin-top: 30px; text-align: center;">
+                    <a href="https://www.pingjob.com/recruiter/dashboard" style="background: #0077b6; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Dashboard</a>
+                  </div>
+                </div>
+              `,
+              text: `New Application for ${job.title}\n\nApplicant: ${applicant.firstName} ${applicant.lastName}\nEmail: ${applicant.email}\n\nView details in your dashboard: https://www.pingjob.com/recruiter/dashboard`
+            });
+            console.log(`📧 Recruiter notification sent to ${recruiter.email}`);
+          }
+        }
+      } catch (emailError) {
+        console.error('❌ Failed to send recruiter notification email:', emailError);
+      }
+      
       // ✅ AUTOMATICALLY TRIGGER RESUME SCORING for ALL applications (including recruiter jobs)
       try {
         console.log(`🚀 Auto-triggering resume scoring for application ${application.id}`);
