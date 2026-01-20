@@ -60,12 +60,15 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
     const initAd = () => {
       window.googletag.cmd.push(function() {
         try {
+          // Check if services are already enabled
+          const pubads = window.googletag.pubads();
+          
           // If the page already has a slot for this divId, we should refresh it instead of defining it again
-          const existingSlots = window.googletag.pubads().getSlots();
+          const existingSlots = pubads.getSlots ? pubads.getSlots() : [];
           const existingSlot = existingSlots.find((s: any) => s.getSlotElementId() === divId);
           
           if (existingSlot) {
-            window.googletag.pubads().refresh([existingSlot]);
+            pubads.refresh([existingSlot]);
             return;
           }
 
@@ -75,7 +78,10 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
             divId
           );
 
-          if (!slot) return;
+          if (!slot) {
+            console.error('GAM: Failed to define slot for', divId);
+            return;
+          }
 
           // Define responsive size mapping
           const mapping = window.googletag.sizeMapping()
@@ -85,14 +91,20 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
             .build();
           
           slot.defineSizeMapping(mapping);
-          slot.addService(window.googletag.pubads());
+          slot.addService(pubads);
           slotRef.current = slot;
 
-          // Crucial: Set collapseEmptyDivs at the slot level to ensure it takes up space even if delayed
-          slot.setCollapseMode(false);
+          // Enable single request mode and services if not already enabled
+          if (!window.googletag._gptServicesEnabled) {
+            pubads.enableSingleRequest();
+            pubads.collapseEmptyDivs(false);
+            window.googletag.enableServices();
+            window.googletag._gptServicesEnabled = true;
+          }
 
+          // Display and refresh the slot
           window.googletag.display(divId);
-          window.googletag.pubads().refresh([slot]);
+          pubads.refresh([slot]);
 
         } catch (error) {
           console.error('GAM Error:', error);
@@ -101,7 +113,7 @@ export default function GoogleAdManager({ slotType, className = '' }: GoogleAdMa
     };
 
     // Use a small timeout to ensure the DOM is ready and IDs are correctly assigned
-    const timer = setTimeout(initAd, 50);
+    const timer = setTimeout(initAd, 100);
 
     return () => {
       clearTimeout(timer);
