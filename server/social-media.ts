@@ -89,7 +89,7 @@ export class SocialMediaPoster {
       // Update job record to mark it as posted if successful
       const facebookResult = results.find(r => r.platform === 'facebook');
       if (facebookResult?.success) {
-        console.log(`✅ Successfully posted job ${jobData.id} to Facebook. Updating job status.`);
+        console.log(`✅ Successfully posted job ${jobData.id} to Facebook with ID: ${facebookResult.postId}. Updating job status.`);
         // Note: You might want to add a 'posted_to_facebook' column to jobs table later
       }
     } catch (logError) {
