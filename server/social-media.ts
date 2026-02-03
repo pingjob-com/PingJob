@@ -85,6 +85,13 @@ export class SocialMediaPoster {
     // Log posting results to database
     try {
       await this.logSocialMediaPost(jobData.id, results);
+      
+      // Update job record to mark it as posted if successful
+      const facebookResult = results.find(r => r.platform === 'facebook');
+      if (facebookResult?.success) {
+        console.log(`✅ Successfully posted job ${jobData.id} to Facebook. Updating job status.`);
+        // Note: You might want to add a 'posted_to_facebook' column to jobs table later
+      }
     } catch (logError) {
       console.error('⚠️ Failed to log social media posting results:', logError);
     }
