@@ -83,14 +83,17 @@ export class SocialMediaPoster {
     }
 
     // Log posting results to database
-    await this.logSocialMediaPost(jobData.id, results);
+    try {
+      await this.logSocialMediaPost(jobData.id, results);
+    } catch (logError) {
+      console.error('⚠️ Failed to log social media posting results:', logError);
+    }
 
     return results;
   }
 
   private async postToFacebook(jobData: JobPostData): Promise<{ id: string }> {
     console.log('🔍 DEBUG: postToFacebook called for job:', jobData.id, jobData.title);
-    console.log('🔍 DEBUG: tokenRenewer available?', !!this.tokenRenewer);
     
     const message = this.generateFacebookPost(jobData);
     
@@ -98,12 +101,17 @@ export class SocialMediaPoster {
     let accessToken: string | null = null;
     
     if (this.tokenRenewer) {
-      accessToken = await this.tokenRenewer.getFacebookToken();
-      if (accessToken) {
-        console.log('✅ Using Facebook token from database (auto-renewed)');
-      } else {
-        console.error('❌ No Facebook token found in database!');
-        throw new Error('Facebook token not available in database. Please check token renewal system.');
+      try {
+        accessToken = await this.tokenRenewer.getFacebookToken();
+        if (accessToken) {
+          console.log('✅ Using Facebook token from database (auto-renewed)');
+        } else {
+          console.error('❌ No Facebook token found in database!');
+          throw new Error('Facebook token not available in database. Please check token renewal system.');
+        }
+      } catch (tokenError) {
+        console.error('❌ Error retrieving Facebook token from database:', tokenError);
+        throw new Error(`Failed to retrieve Facebook token: ${(tokenError as Error).message}`);
       }
     } else {
       console.error('❌ Token renewer not initialized!');
@@ -111,35 +119,51 @@ export class SocialMediaPoster {
     }
     
     // Use page feed for posting
-    const endpoint = `https://graph.facebook.com/v18.0/${this.config.facebook.pageId}/feed`;
+    const pageId = this.config.facebook.pageId || process.env.FACEBOOK_PAGE_ID;
+    if (!pageId) {
+      console.error('❌ Facebook Page ID missing!');
+      throw new Error('Facebook Page ID not configured');
+    }
+
+    const endpoint = `https://graph.facebook.com/v18.0/${pageId}/feed`;
     
-    console.log(`📱 Attempting Facebook post to Page ID: ${this.config.facebook.pageId}`);
+    console.log(`📱 Attempting Facebook post to Page ID: ${pageId}`);
     console.log(`📝 Post message length: ${message.length} characters`);
-    console.log(`🔑 Using database-stored access token`);
     
     // Facebook API prefers form-encoded data
     const formData = new URLSearchParams();
     formData.append('message', message);
     formData.append('access_token', accessToken);
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData.toString(),
-    });
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString(),
+      });
 
-    const responseData = await response.json();
+      const responseData = await response.json();
 
-    if (!response.ok) {
-      console.error('❌ Facebook API Response:', JSON.stringify(responseData, null, 2));
-      throw new Error(`Facebook API error: ${responseData.error?.message || 'Unknown error'}`);
+      if (!response.ok) {
+        console.error('❌ Facebook API Response Error:', JSON.stringify(responseData, null, 2));
+        const errorMsg = responseData.error?.message || 'Unknown Facebook API error';
+        
+        // Specific error handling for token issues
+        if (responseData.error?.code === 190 || errorMsg.includes('access token') || errorMsg.includes('session')) {
+          console.error('🔑 Facebook Token Invalid/Expired. Manual intervention may be required if auto-renewal fails.');
+        }
+        
+        throw new Error(`Facebook API error: ${errorMsg}`);
+      }
+
+      console.log('✅ Facebook post successful! Post ID:', responseData.id);
+      return responseData;
+    } catch (fetchError) {
+      console.error('❌ Network or API error during Facebook posting:', fetchError);
+      throw fetchError;
     }
-
-    console.log('✅ Facebook post successful! Post ID:', responseData.id);
-    console.log(`🎉 Job posted to Facebook with apply link`);
-    return responseData;
   }
 
   private async postToTwitter(jobData: JobPostData): Promise<{ id: string }> {
