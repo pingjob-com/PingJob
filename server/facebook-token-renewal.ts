@@ -83,51 +83,58 @@ export class FacebookTokenRenewer {
         console.log(`⏳ Token expires in ${daysUntilExpiry} days (${hoursUntilExpiry.toFixed(1)} hours)`);
         console.log(`📅 Expiry date: ${token.expiresAt.toISOString()}`);
 
-        // Renew if expires in 2 days or less (48 hours)
-        if (hoursUntilExpiry <= 48) {
-          try {
-            console.log(`🔴 CRITICAL: Token expiring in ${daysUntilExpiry} days! Starting auto-renewal...`);
-            const { accessToken, expiresIn } = await this.refreshFacebookToken(token.accessToken);
-            const newExpiresAt = new Date(Date.now() + expiresIn * 1000);
-            const newExpiresInDays = Math.round(expiresIn / (24 * 60 * 60));
+    // Renew if expires in 15 days or less (360 hours)
+    if (hoursUntilExpiry <= 360) {
+      try {
+        console.log(`🔴 NOTICE: Token expiring in ${daysUntilExpiry} days. Starting proactive renewal...`);
+        const { accessToken, expiresIn } = await this.refreshFacebookToken(token.accessToken);
+        const newExpiresAt = new Date(Date.now() + expiresIn * 1000);
+        const newExpiresInDays = Math.round(expiresIn / (24 * 60 * 60));
 
-            // Update database with new token
-            await db
-              .update(socialMediaTokens)
-              .set({
-                accessToken: accessToken,
-                expiresAt: newExpiresAt,
-                lastRenewedAt: new Date(),
-              })
-              .where(eq(socialMediaTokens.id, token.id));
+        // Update database with new token
+        await db
+          .update(socialMediaTokens)
+          .set({
+            accessToken: accessToken,
+            expiresAt: newExpiresAt,
+            lastRenewedAt: new Date(),
+          })
+          .where(eq(socialMediaTokens.id, token.id));
 
-            console.log(`✅ Token renewed successfully!`);
-            console.log(`📦 New token stored in database`);
-            console.log(`⏰ New expiry: ${newExpiresAt.toISOString()}`);
-            console.log(`📅 Valid for: ${newExpiresInDays} days`);
-            
-            results.push({
-              success: true,
-              platform: 'facebook',
-              newToken: accessToken,
-              expiresAt: newExpiresAt,
-            });
-          } catch (error) {
-            console.error(`❌ Failed to renew token:`, error);
-            results.push({
-              success: false,
-              platform: 'facebook',
-              error: (error as Error).message,
-            });
-          }
-        } else {
-          console.log(`✅ Token still valid for ${daysUntilExpiry} days, no renewal needed`);
-          results.push({
-            success: true,
-            platform: 'facebook',
-            expiresAt: token.expiresAt,
-          });
+        console.log(`✅ Token renewed successfully!`);
+        console.log(`📦 New token stored in database`);
+        console.log(`⏰ New expiry: ${newExpiresAt.toISOString()}`);
+        console.log(`📅 Valid for: ${newExpiresInDays} days`);
+        
+        results.push({
+          success: true,
+          platform: 'facebook',
+          newToken: accessToken,
+          expiresAt: newExpiresAt,
+        });
+      } catch (error) {
+        console.error(`❌ Failed to renew token:`, error);
+        
+        // If renewal fails, we check if it's because the token is actually invalid
+        const errorMsg = (error as Error).message;
+        if (errorMsg.includes('session is invalid') || errorMsg.includes('password') || errorMsg.includes('security')) {
+          console.error('🔑 Proactive renewal failed due to session invalidation. Manual login will be required.');
         }
+
+        results.push({
+          success: false,
+          platform: 'facebook',
+          error: (error as Error).message,
+        });
+      }
+    } else {
+      console.log(`✅ Token still valid for ${daysUntilExpiry} days, no renewal needed yet`);
+      results.push({
+        success: true,
+        platform: 'facebook',
+        expiresAt: token.expiresAt,
+      });
+    }
       }
 
       return results;
