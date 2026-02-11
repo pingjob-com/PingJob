@@ -50,7 +50,7 @@ export default function JobsOriginal() {
 
   // Fetch jobs using fast endpoint with category filtering and search
   const { data: jobs = [], isLoading: jobsLoading } = useQuery({
-    queryKey: ['/api/jobs', selectedCategory, filters.search, filters.location, user?.id],
+    queryKey: ['/api/jobs', selectedCategory, filters.search, user?.id],
     staleTime: 0, // Force fresh data fetch
     queryFn: async () => {
       // If we have search terms, use the search API (no limit for search results)
@@ -286,7 +286,7 @@ export default function JobsOriginal() {
             </div>
 
             {/* Info message about job limits */}
-            {!filters.search.trim() && !filters.location.trim() && !user && (
+            {!filters.search.trim() && !user && (
               <Card className="bg-blue-50 border-blue-200 mb-6">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
@@ -307,7 +307,7 @@ export default function JobsOriginal() {
             )}
 
             {/* Info message for logged-in users */}
-            {!filters.search.trim() && !filters.location.trim() && user && (
+            {!filters.search.trim() && user && (
               <Card className="bg-green-50 border-green-200 mb-6">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
