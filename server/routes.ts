@@ -2047,6 +2047,97 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  app.get('/api/ai-search', async (req, res) => {
+    try {
+      const { q: query } = req.query;
+
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: 'Search query is required' });
+      }
+
+      if (query.trim().length < 2) {
+        return res.json({ results: [] });
+      }
+
+      const rawJobs = await storage.searchJobs(query, 50);
+      const rawCompanies = await storage.searchCompanies(query, 20);
+
+      const queryLower = query.toLowerCase().trim();
+      const queryTerms = queryLower.split(/\s+/).filter(t => t.length > 0);
+
+      const scoredJobs = rawJobs.map((job: any) => {
+        let score = 0;
+        const title = (job.title || '').toLowerCase();
+        const description = (job.description || '').toLowerCase();
+        const companyName = (job.company?.name || '').toLowerCase();
+        const location = [job.city, job.state, job.zipCode, job.location].filter(Boolean).join(' ').toLowerCase();
+        const requirements = (job.requirements || '').toLowerCase();
+
+        if (title.includes(queryLower)) score += 50;
+        if (title === queryLower) score += 30;
+        queryTerms.forEach(term => {
+          if (title.includes(term)) score += 15;
+          if (companyName.includes(term)) score += 12;
+          if (location.includes(term)) score += 10;
+          if (requirements.includes(term)) score += 5;
+          if (description.includes(term)) score += 3;
+        });
+
+        const matchedTerms = queryTerms.filter(term =>
+          title.includes(term) || companyName.includes(term) || location.includes(term) || description.includes(term) || requirements.includes(term)
+        );
+        const termCoverage = queryTerms.length > 0 ? matchedTerms.length / queryTerms.length : 0;
+        score += termCoverage * 20;
+
+        if (job.updatedAt || job.createdAt) {
+          const jobDate = new Date(job.updatedAt || job.createdAt);
+          const daysSincePosted = (Date.now() - jobDate.getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSincePosted < 1) score += 15;
+          else if (daysSincePosted < 7) score += 10;
+          else if (daysSincePosted < 30) score += 5;
+        }
+
+        const applicants = job.applicationCount || 0;
+        if (applicants > 0) score += Math.min(applicants * 0.5, 10);
+
+        return { ...job, _score: score, _type: 'job' as const };
+      });
+
+      const scoredCompanies = rawCompanies.map((company: any) => {
+        let score = 0;
+        const name = (company.name || '').toLowerCase();
+        const industry = (company.industry || '').toLowerCase();
+        const loc = [company.city, company.state, company.location].filter(Boolean).join(' ').toLowerCase();
+
+        if (name.includes(queryLower)) score += 40;
+        if (name === queryLower) score += 25;
+        queryTerms.forEach(term => {
+          if (name.includes(term)) score += 15;
+          if (industry.includes(term)) score += 8;
+          if (loc.includes(term)) score += 8;
+        });
+
+        const jobCount = company.jobCount || 0;
+        if (jobCount > 0) score += Math.min(jobCount * 2, 15);
+
+        return { ...company, _score: score, _type: 'company' as const };
+      });
+
+      const allResults = [...scoredJobs, ...scoredCompanies]
+        .sort((a, b) => b._score - a._score)
+        .slice(0, 5)
+        .map(item => {
+          const { _score, ...rest } = item;
+          return { ...rest, _type: item._type };
+        });
+
+      res.json({ results: allResults });
+    } catch (error) {
+      console.error('Error in AI search endpoint:', error);
+      res.status(500).json({ message: 'AI search failed' });
+    }
+  });
+
   // Global search endpoint for companies and jobs
   app.get('/api/search', async (req, res) => {
     try {

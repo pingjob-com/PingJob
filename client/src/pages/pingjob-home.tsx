@@ -173,6 +173,10 @@ export default function PingJobHome() {
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [heroExpanded, setHeroExpanded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [aiQuery, setAiQuery] = useState("");
+  const [aiResults, setAiResults] = useState<any[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSearched, setAiSearched] = useState(false);
   const jobsPerPage = 40; // 4 columns × 10 rows
   const totalJobsToShow = 200; // 5 pages × 40 jobs
 
@@ -460,6 +464,22 @@ export default function PingJobHome() {
       setSearchResults({ jobs: [], companies: [] });
     } finally {
       setSearchLoading(false);
+    }
+  };
+
+  const handleAiSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiQuery.trim() || aiQuery.trim().length < 2) return;
+    setAiLoading(true);
+    setAiSearched(true);
+    try {
+      const response = await apiRequest('GET', `/api/ai-search?q=${encodeURIComponent(aiQuery.trim())}`);
+      const data = await response.json();
+      setAiResults(data.results || []);
+    } catch (error) {
+      setAiResults([]);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -893,6 +913,97 @@ export default function PingJobHome() {
           </div>
         </div>
 
+        {/* AI Agent Search Box */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
+          <Card className="border-0 shadow-xl bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2.5 rounded-xl shadow-lg">
+                  <Bot className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">AI Job Assistant</h3>
+                  <p className="text-sm text-gray-500">Ask me anything about jobs, companies, or skills</p>
+                </div>
+              </div>
+              <form onSubmit={handleAiSearch} className="flex gap-2 mb-4">
+                <Input
+                  type="text"
+                  placeholder='Try "React developer jobs in Texas" or "companies hiring for cloud engineers"...'
+                  value={aiQuery}
+                  onChange={(e) => setAiQuery(e.target.value)}
+                  className="flex-1 bg-white border-gray-200 shadow-sm"
+                />
+                <Button
+                  type="submit"
+                  disabled={aiLoading || aiQuery.trim().length < 2}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 shadow-md"
+                >
+                  {aiLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
+                </Button>
+              </form>
+
+              {aiLoading && (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-white rounded-lg p-4 animate-pulse">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!aiLoading && aiSearched && aiResults.length === 0 && (
+                <div className="text-center py-6 bg-white rounded-lg">
+                  <p className="text-gray-500 text-sm">No results found. Try a different query.</p>
+                </div>
+              )}
+
+              {!aiLoading && aiResults.length > 0 && (
+                <div className="space-y-2">
+                  {aiResults.map((item: any, idx: number) => (
+                    <Link
+                      key={`ai-${idx}-${item.id}`}
+                      href={item._type === 'company' ? `/companies/${item.id}` : `/jobs/${item.id}`}
+                    >
+                      <div className="bg-white rounded-lg p-4 hover:shadow-md transition-all duration-200 border border-gray-100 cursor-pointer flex items-center gap-4">
+                        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${item._type === 'company' ? 'bg-green-100' : 'bg-blue-100'}`}>
+                          {item._type === 'company' ? (
+                            <Building2 className="h-5 w-5 text-green-600" />
+                          ) : (
+                            <Briefcase className="h-5 w-5 text-blue-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-sm text-gray-900 truncate">
+                              {item._type === 'company' ? item.name : item.title}
+                            </h4>
+                            <Badge variant="secondary" className="text-xs flex-shrink-0">
+                              {item._type === 'company' ? 'Company' : 'Job'}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-gray-500 truncate mt-0.5">
+                            {item._type === 'company'
+                              ? [item.industry, item.location].filter(Boolean).join(' · ')
+                              : [item.company?.name, formatJobLocation(item)].filter(Boolean).join(' · ')}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Desktop Main Content - Jobs Section */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             {/* Job Opportunities (10 rows × 4 jobs = 40 jobs per page) */}
@@ -1079,6 +1190,96 @@ export default function PingJobHome() {
 
       {/* Mobile Main Content - Now matches web UI with responsive grid */}
       <main className="mobile-only px-4 py-6" style={{ marginTop: showMainSearchResults ? '0' : '20px' }}>
+        {/* Mobile AI Agent Search Box */}
+        <Card className="border-0 shadow-xl bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 overflow-hidden mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-lg shadow-lg">
+                <Bot className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">AI Job Assistant</h3>
+                <p className="text-xs text-gray-500">Ask about jobs, companies, or skills</p>
+              </div>
+            </div>
+            <form onSubmit={handleAiSearch} className="flex gap-2 mb-3">
+              <Input
+                type="text"
+                placeholder='Try "React jobs in Texas"...'
+                value={aiQuery}
+                onChange={(e) => setAiQuery(e.target.value)}
+                className="flex-1 bg-white border-gray-200 shadow-sm text-sm"
+              />
+              <Button
+                type="submit"
+                disabled={aiLoading || aiQuery.trim().length < 2}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 shadow-md"
+                size="sm"
+              >
+                {aiLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+              </Button>
+            </form>
+
+            {aiLoading && (
+              <div className="space-y-2">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg p-3 animate-pulse">
+                    <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-2 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!aiLoading && aiSearched && aiResults.length === 0 && (
+              <div className="text-center py-4 bg-white rounded-lg">
+                <p className="text-gray-500 text-xs">No results found. Try a different query.</p>
+              </div>
+            )}
+
+            {!aiLoading && aiResults.length > 0 && (
+              <div className="space-y-2">
+                {aiResults.map((item: any, idx: number) => (
+                  <Link
+                    key={`ai-m-${idx}-${item.id}`}
+                    href={item._type === 'company' ? `/companies/${item.id}` : `/jobs/${item.id}`}
+                  >
+                    <div className="bg-white rounded-lg p-3 hover:shadow-md transition-all duration-200 border border-gray-100 cursor-pointer flex items-center gap-3">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${item._type === 'company' ? 'bg-green-100' : 'bg-blue-100'}`}>
+                        {item._type === 'company' ? (
+                          <Building2 className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Briefcase className="h-4 w-4 text-blue-600" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="font-semibold text-xs text-gray-900 truncate">
+                            {item._type === 'company' ? item.name : item.title}
+                          </h4>
+                          <Badge variant="secondary" className="text-[10px] flex-shrink-0 px-1.5 py-0">
+                            {item._type === 'company' ? 'Company' : 'Job'}
+                          </Badge>
+                        </div>
+                        <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                          {item._type === 'company'
+                            ? [item.industry, item.location].filter(Boolean).join(' · ')
+                            : [item.company?.name, formatJobLocation(item)].filter(Boolean).join(' · ')}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Mobile Hero Stats - Matching desktop style */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-6 mb-6 shadow-xl">
           <div className="grid grid-cols-2 gap-4 mb-4">
