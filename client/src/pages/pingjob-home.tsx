@@ -978,11 +978,13 @@ export default function PingJobHome() {
                   {aiResults.map((item: any, idx: number) => (
                     <Link
                       key={`ai-${idx}-${item.id}`}
-                      href={item._type === 'company' ? `/companies/${item.id}` : `/jobs/${item.id}`}
+                      href={item._type === 'vendor' ? `/companies/${item.client_company_id}` : item._type === 'company' ? `/companies/${item.id}` : `/jobs/${item.id}`}
                     >
                       <div className="bg-white rounded-lg p-4 hover:shadow-md transition-all duration-200 border border-gray-100 cursor-pointer flex items-center gap-4">
-                        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${item._type === 'company' ? 'bg-green-100' : 'bg-blue-100'}`}>
-                          {item._type === 'company' ? (
+                        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${item._type === 'vendor' ? 'bg-purple-100' : item._type === 'company' ? 'bg-green-100' : 'bg-blue-100'}`}>
+                          {item._type === 'vendor' ? (
+                            <Users className="h-5 w-5 text-purple-600" />
+                          ) : item._type === 'company' ? (
                             <Building2 className="h-5 w-5 text-green-600" />
                           ) : (
                             <Briefcase className="h-5 w-5 text-blue-600" />
@@ -991,14 +993,16 @@ export default function PingJobHome() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h4 className="font-semibold text-sm text-gray-900 truncate">
-                              {item._type === 'company' ? item.name : item.title}
+                              {item._type === 'vendor' ? item.name : item._type === 'company' ? item.name : item.title}
                             </h4>
-                            <Badge variant="secondary" className="text-xs flex-shrink-0">
-                              {item._type === 'company' ? 'Company' : 'Job'}
+                            <Badge variant="secondary" className={`text-xs flex-shrink-0 ${item._type === 'vendor' ? 'bg-purple-100 text-purple-700' : ''}`}>
+                              {item._type === 'vendor' ? 'Vendor' : item._type === 'company' ? 'Company' : 'Job'}
                             </Badge>
                           </div>
                           <p className="text-xs text-gray-500 truncate mt-0.5">
-                            {item._type === 'company'
+                            {item._type === 'vendor'
+                              ? `Vendor for ${item.client_company}${item.city ? ' · ' + [item.city, item.state].filter(Boolean).join(', ') : ''}`
+                              : item._type === 'company'
                               ? [item.industry, item.location].filter(Boolean).join(' · ')
                               : [item.company?.name, formatJobLocation(item)].filter(Boolean).join(' · ')}
                           </p>
@@ -1261,11 +1265,13 @@ export default function PingJobHome() {
                 {aiResults.map((item: any, idx: number) => (
                   <Link
                     key={`ai-m-${idx}-${item.id}`}
-                    href={item._type === 'company' ? `/companies/${item.id}` : `/jobs/${item.id}`}
+                    href={item._type === 'vendor' ? `/companies/${item.client_company_id}` : item._type === 'company' ? `/companies/${item.id}` : `/jobs/${item.id}`}
                   >
                     <div className="bg-white rounded-lg p-3 hover:shadow-md transition-all duration-200 border border-gray-100 cursor-pointer flex items-center gap-3">
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${item._type === 'company' ? 'bg-green-100' : 'bg-blue-100'}`}>
-                        {item._type === 'company' ? (
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${item._type === 'vendor' ? 'bg-purple-100' : item._type === 'company' ? 'bg-green-100' : 'bg-blue-100'}`}>
+                        {item._type === 'vendor' ? (
+                          <Users className="h-4 w-4 text-purple-600" />
+                        ) : item._type === 'company' ? (
                           <Building2 className="h-4 w-4 text-green-600" />
                         ) : (
                           <Briefcase className="h-4 w-4 text-blue-600" />
@@ -1274,14 +1280,16 @@ export default function PingJobHome() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <h4 className="font-semibold text-xs text-gray-900 truncate">
-                            {item._type === 'company' ? item.name : item.title}
+                            {item._type === 'vendor' ? item.name : item._type === 'company' ? item.name : item.title}
                           </h4>
-                          <Badge variant="secondary" className="text-[10px] flex-shrink-0 px-1.5 py-0">
-                            {item._type === 'company' ? 'Company' : 'Job'}
+                          <Badge variant="secondary" className={`text-[10px] flex-shrink-0 px-1.5 py-0 ${item._type === 'vendor' ? 'bg-purple-100 text-purple-700' : ''}`}>
+                            {item._type === 'vendor' ? 'Vendor' : item._type === 'company' ? 'Company' : 'Job'}
                           </Badge>
                         </div>
                         <p className="text-[11px] text-gray-500 truncate mt-0.5">
-                          {item._type === 'company'
+                          {item._type === 'vendor'
+                            ? `Vendor for ${item.client_company}${item.city ? ' · ' + [item.city, item.state].filter(Boolean).join(', ') : ''}`
+                            : item._type === 'company'
                             ? [item.industry, item.location].filter(Boolean).join(' · ')
                             : [item.company?.name, formatJobLocation(item)].filter(Boolean).join(' · ')}
                         </p>

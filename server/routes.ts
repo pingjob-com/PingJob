@@ -2084,11 +2084,33 @@ export function registerRoutes(app: Express) {
 
       const searchTermsList = meaningfulTerms.length > 0 ? meaningfulTerms : allTerms.filter(t => t.length >= 2);
 
+      const vendorKeywords = ['vendor', 'vendors', 'subcontractor', 'subcontractors', 'supplier', 'suppliers', 'partner', 'partners'];
+      const isVendorQuery = allTerms.some(t => vendorKeywords.includes(t.toLowerCase()));
+      const nonVendorTerms = searchTermsList.filter(t => !vendorKeywords.includes(t.toLowerCase()));
+      const entitySearchTerms = isVendorQuery && nonVendorTerms.length > 0 ? nonVendorTerms : searchTermsList;
+
+      let vendorResults: any[] = [];
+      if (isVendorQuery && nonVendorTerms.length > 0) {
+        const vendorSearch = nonVendorTerms.map(t => `%${t}%`);
+        const vendorQuery = await pool.query(
+          `SELECT DISTINCT v.name as vendor_name, v.id as vendor_id, v.services, v.vendor_city, v.vendor_state,
+                  c.name as client_company, c.id as client_company_id, c.industry, c.logo_url as "logoUrl"
+           FROM vendors v
+           JOIN companies c ON v.company_id = c.id
+           WHERE ${vendorSearch.map((_, i) => `c.name ILIKE $${i + 1}`).join(' OR ')}
+           AND v.status = 'approved'
+           ORDER BY v.name
+           LIMIT 30`,
+          vendorSearch
+        );
+        vendorResults = vendorQuery.rows;
+      }
+
       const jobSearches = await Promise.all(
-        searchTermsList.map(term => storage.searchJobs(term, 30))
+        entitySearchTerms.map(term => storage.searchJobs(term, 30))
       );
       const companySearches = await Promise.all(
-        searchTermsList.map(term => storage.searchCompanies(term, 15))
+        entitySearchTerms.map(term => storage.searchCompanies(term, 15))
       );
 
       const jobMap = new Map<number, any>();
@@ -2103,7 +2125,7 @@ export function registerRoutes(app: Express) {
       });
       const rawCompanies = Array.from(companyMap.values());
 
-      const queryTerms = searchTermsList;
+      const queryTerms = entitySearchTerms;
 
       const scoredJobs = rawJobs.map((job: any) => {
         let score = 0;
@@ -2163,7 +2185,20 @@ export function registerRoutes(app: Express) {
         return { ...company, _score: score, _type: 'company' as const };
       });
 
-      const allResults = [...scoredJobs, ...scoredCompanies]
+      const scoredVendors = vendorResults.map((v: any) => ({
+        id: v.vendor_id,
+        name: v.vendor_name,
+        client_company: v.client_company,
+        client_company_id: v.client_company_id,
+        industry: v.industry,
+        services: v.services,
+        city: v.vendor_city,
+        state: v.vendor_state,
+        _score: 100,
+        _type: 'vendor' as const
+      }));
+
+      const allResults = [...scoredVendors, ...scoredJobs, ...scoredCompanies]
         .sort((a, b) => b._score - a._score)
         .slice(0, 5)
         .map(item => {
@@ -2171,11 +2206,14 @@ export function registerRoutes(app: Express) {
           return { ...rest, _type: item._type };
         });
 
-      const summary = rawJobs.length > 0 || rawCompanies.length > 0
-        ? `Found ${rawJobs.length} job${rawJobs.length !== 1 ? 's' : ''} and ${rawCompanies.length} compan${rawCompanies.length !== 1 ? 'ies' : 'y'} matching "${searchTermsList.join(', ')}"`
-        : null;
+      let summary: string | null = null;
+      if (isVendorQuery && vendorResults.length > 0) {
+        summary = `Found ${vendorResults.length} vendor${vendorResults.length !== 1 ? 's' : ''} for "${nonVendorTerms.join(', ')}"`;
+      } else if (rawJobs.length > 0 || rawCompanies.length > 0) {
+        summary = `Found ${rawJobs.length} job${rawJobs.length !== 1 ? 's' : ''} and ${rawCompanies.length} compan${rawCompanies.length !== 1 ? 'ies' : 'y'} matching "${entitySearchTerms.join(', ')}"`;
+      }
 
-      res.json({ results: allResults, summary, totalJobs: rawJobs.length, totalCompanies: rawCompanies.length });
+      res.json({ results: allResults, summary, totalJobs: rawJobs.length, totalCompanies: rawCompanies.length, totalVendors: vendorResults.length });
     } catch (error) {
       console.error('Error in AI search endpoint:', error);
       res.status(500).json({ message: 'AI search failed' });
