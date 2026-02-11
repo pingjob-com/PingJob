@@ -15,6 +15,7 @@ import { FcGoogle } from "react-icons/fc";
 import { Browser } from "@capacitor/browser";
 import { CapacitorService } from "../capacitor";
 import { getApiBaseUrl } from "@/lib/apiConfig";
+import GoogleAdManager from "@/components/ads/GoogleAdManager";
 const logo = 'https://cdn.pingjob.com/logo.png';
 
 interface AuthFormData {
@@ -303,7 +304,7 @@ export default function Auth() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Card>
+        <Card className="mb-6">
           <CardHeader className="space-y-1">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2">
@@ -607,6 +608,10 @@ export default function Auth() {
             </div>
           </CardContent>
         </Card>
+
+        <div className="mt-4">
+          <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
+        </div>
 
         <div className="mt-8 text-center">
           <Link href="/">

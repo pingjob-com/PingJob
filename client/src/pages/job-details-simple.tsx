@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import JobApplicationModal from "@/components/modals/job-application-modal";
 import { resolveLogoUrl } from "@/lib/apiConfig";
 import { generateJobUrl, parseSlugUrl } from "../../../shared/slug-utils";
+import GoogleAdManager from "@/components/ads/GoogleAdManager";
 
 export default function JobDetailsSimple() {
   const { id, idSlug } = useParams();
@@ -435,54 +436,68 @@ export default function JobDetailsSimple() {
                   />
                 </>
               )}
+              
+              {!user && (
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
               {vendors.length > 0 && (
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Users className="h-5 w-5 mr-2" />
-                      Approved Vendors
-                    </CardTitle>
-                    {isLimited && (
-                      <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                        <p className="text-sm text-blue-700 mb-2">
-                          <span className="font-medium">{signupMessage}</span>
-                        </p>
-                        <Link href="/auth">
-                          <Button size="sm" className="bg-linkedin-blue hover:bg-blue-700">
-                            Sign Up to View All {totalVendorCount} Vendors
-                          </Button>
-                        </Link>
-                      </div>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {vendors.map((vendor: any) => (
-                        <div key={vendor.id} className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-gray-900 text-lg">{vendor.name}</h4>
-                            
-                            {(vendor.address || vendor.city) && (
-                              <div className="flex items-center text-sm text-gray-600">
-                                <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-                                <span>
-                                  {vendor.address && vendor.address !== 'NULL' && `${vendor.address}, `}
-                                  {vendor.city && vendor.city !== 'NULL' && vendor.state && vendor.state !== 'NULL' && `${vendor.city}, ${vendor.state}`}
-                                  {vendor.zipCode && vendor.zipCode !== 'NULL' && `, ${vendor.zipCode}`}
-                                  {vendor.city && vendor.city !== 'NULL' && `, United States`}
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                <>
+                  <Card className="mb-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Users className="h-5 w-5 mr-2" />
+                        Approved Vendors
+                      </CardTitle>
+                      {isLimited && (
+                        <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                          <p className="text-sm text-blue-700 mb-2">
+                            <span className="font-medium">{signupMessage}</span>
+                          </p>
+                          <Link href="/auth">
+                            <Button size="sm" className="bg-linkedin-blue hover:bg-blue-700">
+                              Sign Up to View All {totalVendorCount} Vendors
+                            </Button>
+                          </Link>
                         </div>
-                      ))}
+                      )}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {vendors.map((vendor: any) => (
+                          <div key={vendor.id} className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-gray-900 text-lg">{vendor.name}</h4>
+                              
+                              {(vendor.address || vendor.city) && (
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+                                  <span>
+                                    {vendor.address && vendor.address !== 'NULL' && `${vendor.address}, `}
+                                    {vendor.city && vendor.city !== 'NULL' && vendor.state && vendor.state !== 'NULL' && `${vendor.city}, ${vendor.state}`}
+                                    {vendor.zipCode && vendor.zipCode !== 'NULL' && `, ${vendor.zipCode}`}
+                                    {vendor.city && vendor.city !== 'NULL' && `, United States`}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  {!user && (
+                    <div className="mb-6">
+                      <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
                     </div>
-                  </CardContent>
-                </Card>
+                  )}
+                </>
               )}
             </div>
 
