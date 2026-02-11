@@ -289,21 +289,7 @@ export default function CompanyCreate() {
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
-            <p className="text-gray-600">Please log in to create a company.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Job seekers cannot create companies
-  if (user.userType === 'job_seeker') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
-            <p className="text-gray-600">Only recruiters, clients, and enterprise users can create companies. If you need to create a company, please upgrade your account.</p>
+            <p className="text-gray-600">Please log in to add a client company.</p>
           </CardContent>
         </Card>
       </div>
@@ -317,8 +303,13 @@ export default function CompanyCreate() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="h-6 w-6" />
-              Create Company Page
+              Add New Client
             </CardTitle>
+            <p className="text-sm text-gray-500 mt-1">
+              Submit a new client company. {user?.userType === 'admin' || user?.userType === 'recruiter' || user?.userType === 'client' 
+                ? 'Your submission will be auto-approved.' 
+                : 'An admin will review and approve your submission.'}
+            </p>
           </CardHeader>
           <CardContent>
             <Form {...companyForm}>

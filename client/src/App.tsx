@@ -210,6 +210,17 @@ function Router() {
     return (
       <div className="min-h-screen bg-gray-50 safe-area-top safe-area-bottom">
         <Switch>
+          {/* Static routes must come before dynamic slug routes */}
+          <Route path="/companies/create">
+            {() => <CompanyCreate />}
+          </Route>
+          <Route path="/company-create">
+            {() => <CompanyCreate />}
+          </Route>
+          <Route path="/company/create">
+            {() => <CompanyCreate />}
+          </Route>
+          
           {/* New slug-based routes - must come before legacy routes */}
           <Route path="/jobs/:idSlug" component={JobDetailsSimple} />
           <Route path="/companies/:idSlug" component={CompanyDetails} />
@@ -258,6 +269,17 @@ function Router() {
     <div className="min-h-screen bg-gray-50 safe-area-top safe-area-bottom">
       <ProtectedLayout>
         <Switch>
+          {/* Static routes must come before dynamic slug routes */}
+          <Route path="/companies/create">
+            {() => <CompanyCreate />}
+          </Route>
+          <Route path="/company-create">
+            {() => <CompanyCreate />}
+          </Route>
+          <Route path="/company/create">
+            {() => <CompanyCreate />}
+          </Route>
+          
           {/* New slug-based routes - must come before legacy routes */}
           <Route path="/jobs/:idSlug" component={JobDetailsSimple} />
           <Route path="/companies/:idSlug" component={CompanyDetails} />
@@ -271,15 +293,6 @@ function Router() {
           </Route>
           <Route path="/jobs">
             {() => <PaymentGate><JobsOriginal /></PaymentGate>}
-          </Route>
-          <Route path="/company-create">
-            {() => <PaymentGate><CompanyCreate /></PaymentGate>}
-          </Route>
-          <Route path="/company/create">
-            {() => <PaymentGate><CompanyCreate /></PaymentGate>}
-          </Route>
-          <Route path="/companies/create">
-            {() => <PaymentGate><CompanyCreate /></PaymentGate>}
           </Route>
           <Route path="/companies">
             {() => <PaymentGate><Companies /></PaymentGate>}
