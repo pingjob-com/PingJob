@@ -2127,6 +2127,44 @@ export function registerRoutes(app: Express) {
 
       const queryTerms = entitySearchTerms;
 
+      const usStates: Record<string, string> = {
+        'alabama': 'al', 'alaska': 'ak', 'arizona': 'az', 'arkansas': 'ar', 'california': 'ca',
+        'colorado': 'co', 'connecticut': 'ct', 'delaware': 'de', 'florida': 'fl', 'georgia': 'ga',
+        'hawaii': 'hi', 'idaho': 'id', 'illinois': 'il', 'indiana': 'in', 'iowa': 'ia',
+        'kansas': 'ks', 'kentucky': 'ky', 'louisiana': 'la', 'maine': 'me', 'maryland': 'md',
+        'massachusetts': 'ma', 'michigan': 'mi', 'minnesota': 'mn', 'mississippi': 'ms', 'missouri': 'mo',
+        'montana': 'mt', 'nebraska': 'ne', 'nevada': 'nv', 'new hampshire': 'nh', 'new jersey': 'nj',
+        'new mexico': 'nm', 'new york': 'ny', 'north carolina': 'nc', 'north dakota': 'nd', 'ohio': 'oh',
+        'oklahoma': 'ok', 'oregon': 'or', 'pennsylvania': 'pa', 'rhode island': 'ri', 'south carolina': 'sc',
+        'south dakota': 'sd', 'tennessee': 'tn', 'texas': 'tx', 'utah': 'ut', 'vermont': 'vt',
+        'virginia': 'va', 'washington': 'wa', 'west virginia': 'wv', 'wisconsin': 'wi', 'wyoming': 'wy'
+      };
+      const stateAbbrevToFull: Record<string, string> = {};
+      Object.entries(usStates).forEach(([full, abbr]) => { stateAbbrevToFull[abbr] = full; });
+
+      const locationTerms: string[] = [];
+      const nonLocationTerms: string[] = [];
+      const queryLowerJoined = queryTerms.join(' ');
+      for (const [stateName, abbr] of Object.entries(usStates)) {
+        if (queryLowerJoined.includes(stateName)) {
+          locationTerms.push(stateName);
+          queryTerms.forEach(t => {
+            if (stateName.includes(t) && !locationTerms.includes(t)) locationTerms.push(t);
+          });
+        }
+      }
+      queryTerms.forEach(term => {
+        if (stateAbbrevToFull[term] && !locationTerms.includes(term)) {
+          locationTerms.push(term);
+          locationTerms.push(stateAbbrevToFull[term]);
+        }
+      });
+      queryTerms.forEach(term => {
+        if (!locationTerms.includes(term)) nonLocationTerms.push(term);
+      });
+
+      const hasLocationFilter = locationTerms.length > 0;
+
       const scoredJobs = rawJobs.map((job: any) => {
         let score = 0;
         const title = (job.title || '').toLowerCase();
@@ -2135,20 +2173,35 @@ export function registerRoutes(app: Express) {
         const location = [job.city, job.state, job.zipCode, job.location].filter(Boolean).join(' ').toLowerCase();
         const requirements = (job.requirements || '').toLowerCase();
 
+        const skillTerms = hasLocationFilter ? nonLocationTerms : queryTerms;
+
         if (title.includes(queryLower)) score += 50;
         if (title === queryLower) score += 30;
-        queryTerms.forEach(term => {
+        skillTerms.forEach(term => {
           if (title.includes(term)) score += 15;
           if (companyName.includes(term)) score += 12;
-          if (location.includes(term)) score += 10;
           if (requirements.includes(term)) score += 5;
           if (description.includes(term)) score += 3;
         });
 
-        const matchedTerms = queryTerms.filter(term =>
+        if (hasLocationFilter) {
+          const locationMatch = locationTerms.some(lt => location.includes(lt));
+          if (locationMatch) {
+            score += 40;
+          } else {
+            score -= 50;
+          }
+        } else {
+          queryTerms.forEach(term => {
+            if (location.includes(term)) score += 10;
+          });
+        }
+
+        const allTermsForCoverage = hasLocationFilter ? [...skillTerms, ...locationTerms] : queryTerms;
+        const matchedTerms = allTermsForCoverage.filter(term =>
           title.includes(term) || companyName.includes(term) || location.includes(term) || description.includes(term) || requirements.includes(term)
         );
-        const termCoverage = queryTerms.length > 0 ? matchedTerms.length / queryTerms.length : 0;
+        const termCoverage = allTermsForCoverage.length > 0 ? matchedTerms.length / allTermsForCoverage.length : 0;
         score += termCoverage * 20;
 
         if (job.updatedAt || job.createdAt) {
