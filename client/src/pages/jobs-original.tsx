@@ -19,8 +19,7 @@ export default function JobsOriginal() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const [filters, setFilters] = useState({
-    search: "",
-    location: ""
+    search: ""
   });
 
   // Pagination state
@@ -39,11 +38,9 @@ export default function JobsOriginal() {
     
     
     if (searchParam || locationParam) {
-      setFilters(prev => ({
-        ...prev,
-        search: searchParam || "",
-        location: locationParam || ""
-      }));
+      setFilters({
+        search: (searchParam || "") + (locationParam ? " " + locationParam : "")
+      });
     }
     
     if (categoryParam) {
@@ -57,14 +54,8 @@ export default function JobsOriginal() {
     staleTime: 0, // Force fresh data fetch
     queryFn: async () => {
       // If we have search terms, use the search API (no limit for search results)
-      if (filters.search.trim() || filters.location.trim()) {
-        let searchUrl = '/api/search?';
-        if (filters.search.trim()) {
-          searchUrl += `q=${encodeURIComponent(filters.search)}&`;
-        }
-        if (filters.location.trim()) {
-          searchUrl += `location=${encodeURIComponent(filters.location)}&`;
-        }
+      if (filters.search.trim()) {
+        let searchUrl = `/api/search?q=${encodeURIComponent(filters.search)}`;
         
         const response = await fetch(searchUrl);
         if (!response.ok) throw new Error('Failed to search jobs');
@@ -245,27 +236,18 @@ export default function JobsOriginal() {
             <div className="flex-1">
               <Input
                 type="text"
-                placeholder="Search jobs, companies, or skills..."
+                placeholder="Search jobs, companies, skills, or location..."
                 value={filters.search}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                onChange={(e) => setFilters({ search: e.target.value })}
                 className="w-full"
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') {
                     const searchValue = (e.target as HTMLInputElement).value;
                     if (searchValue.trim()) {
-                      setFilters(prev => ({ ...prev, search: searchValue }));
+                      setFilters({ search: searchValue });
                     }
                   }
                 }}
-              />
-            </div>
-            <div className="flex-1">
-              <Input
-                type="text"
-                placeholder="Location (city, state, or remote)"
-                value={filters.location}
-                onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
-                className="w-full"
               />
             </div>
           </div>

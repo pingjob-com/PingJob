@@ -566,7 +566,7 @@ export default function PingJobHome() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     type="text"
-                    placeholder="Search jobs, companies, or skills..."
+                    placeholder="Search jobs, companies, skills, or location..."
                     value={searchQuery}
                     onChange={handleSearchChange}
                     className="pl-10 pr-4 py-2 w-full"
