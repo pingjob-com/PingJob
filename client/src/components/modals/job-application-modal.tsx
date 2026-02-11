@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2, Upload, FileText, X } from "lucide-react";
 import type { JobWithCompany } from "@/lib/types";
+import GoogleAdManager from "@/components/ads/GoogleAdManager";
 
 const applicationSchema = z.object({
   jobId: z.number(),
@@ -322,6 +323,12 @@ export default function JobApplicationModal({
               <p className="text-sm text-gray-600 line-clamp-4">
                 {job.requirements}
               </p>
+            </div>
+          )}
+
+          {!user && (
+            <div className="mt-4 border-t pt-4">
+              <GoogleAdManager slotType="responsive_in_feed" className="w-full" />
             </div>
           )}
 

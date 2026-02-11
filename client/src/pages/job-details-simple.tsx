@@ -392,13 +392,20 @@ export default function JobDetailsSimple() {
                   <div className="flex-1"></div>
                   
                   {/* Apply Now Button - Desktop Only */}
-                  <Button
-                    onClick={handleApply}
-                    className="bg-linkedin-blue text-white hover:bg-linkedin-dark px-8 py-2 text-base"
-                    size="lg"
-                  >
-                    Apply Now
-                  </Button>
+                  <div className="flex flex-col items-end gap-2">
+                    <Button
+                      onClick={handleApply}
+                      className="bg-linkedin-blue text-white hover:bg-linkedin-dark px-8 py-2 text-base"
+                      size="lg"
+                    >
+                      Apply Now
+                    </Button>
+                    {!user && (
+                      <div className="w-full max-w-[200px]">
+                        <GoogleAdManager slotType="responsive_in_feed" className="w-full scale-75 origin-right" />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
           <CardContent className="p-4 sm:p-8">
