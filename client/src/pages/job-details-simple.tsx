@@ -535,7 +535,7 @@ export default function JobDetailsSimple() {
                   </Button>
                 </Link>
                 {job?.companyId && (
-                  <Link href={`/companies/${job.companyId}`}>
+                  <Link href={`/companies/${job.companyId}?tab=vendors`}>
                     <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7">
                       <Users className="h-3 w-3" />
                       Assign Vendor
@@ -543,7 +543,7 @@ export default function JobDetailsSimple() {
                   </Link>
                 )}
                 {job?.companyId && (
-                  <Link href={`/companies/${job.companyId}`}>
+                  <Link href={`/companies/${job.companyId}?tab=vendors`}>
                     <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7">
                       <Briefcase className="h-3 w-3" />
                       Add Contacts
@@ -551,7 +551,7 @@ export default function JobDetailsSimple() {
                   </Link>
                 )}
                 {job?.companyId && (
-                  <Link href={`/companies/${job.companyId}`}>
+                  <Link href={`/companies/${job.companyId}?tab=reviews`}>
                     <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7">
                       <MessageSquare className="h-3 w-3" />
                       Add Comments
@@ -666,7 +666,7 @@ export default function JobDetailsSimple() {
                       </div>
                     </Link>
                     {job?.companyId && (
-                      <Link href={`/companies/${job.companyId}`}>
+                      <Link href={`/companies/${job.companyId}?tab=vendors`}>
                         <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer">
                           <Users className="h-3.5 w-3.5" />
                           <span>Assign Vendor</span>
@@ -674,7 +674,7 @@ export default function JobDetailsSimple() {
                       </Link>
                     )}
                     {job?.companyId && (
-                      <Link href={`/companies/${job.companyId}`}>
+                      <Link href={`/companies/${job.companyId}?tab=vendors`}>
                         <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-green-50 hover:text-green-700 transition-colors cursor-pointer">
                           <Briefcase className="h-3.5 w-3.5" />
                           <span>Add Contacts</span>
@@ -682,7 +682,7 @@ export default function JobDetailsSimple() {
                       </Link>
                     )}
                     {job?.companyId && (
-                      <Link href={`/companies/${job.companyId}`}>
+                      <Link href={`/companies/${job.companyId}?tab=reviews`}>
                         <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-orange-50 hover:text-orange-700 transition-colors cursor-pointer">
                           <MessageSquare className="h-3.5 w-3.5" />
                           <span>Add Comments</span>

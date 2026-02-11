@@ -50,7 +50,10 @@ import {
   Edit,
   ChevronLeft,
   ChevronRight,
-  Menu
+  Menu,
+  MessageSquare,
+  UserPlus,
+  Contact
 } from "lucide-react";
 
 // VendorManagement Component - Restored from working dashboard implementation
@@ -393,7 +396,29 @@ function CompanyCard({ company, onSelectCompany, onFollowCompany, onEditCompany 
             )}
           </div>
           
-          {/* Action Buttons */}
+          {/* Quick Action Links */}
+          <div className="flex flex-wrap justify-center gap-1 mt-1">
+            <Link href={`/companies/${company.id}?tab=vendors`} onClick={(e: any) => e.stopPropagation()}>
+              <Button variant="ghost" size="sm" className="text-[10px] gap-0.5 h-6 text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-1.5">
+                <UserPlus className="h-2.5 w-2.5" />
+                Vendor
+              </Button>
+            </Link>
+            <Link href={`/companies/${company.id}?tab=vendors`} onClick={(e: any) => e.stopPropagation()}>
+              <Button variant="ghost" size="sm" className="text-[10px] gap-0.5 h-6 text-green-600 hover:text-green-800 hover:bg-green-50 px-1.5">
+                <Contact className="h-2.5 w-2.5" />
+                Contact
+              </Button>
+            </Link>
+            <Link href={`/companies/${company.id}?tab=reviews`} onClick={(e: any) => e.stopPropagation()}>
+              <Button variant="ghost" size="sm" className="text-[10px] gap-0.5 h-6 text-orange-600 hover:text-orange-800 hover:bg-orange-50 px-1.5">
+                <MessageSquare className="h-2.5 w-2.5" />
+                Comment
+              </Button>
+            </Link>
+          </div>
+          
+          {/* Admin & Follow Buttons */}
           <div className="w-full mt-auto space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
             {isAdmin && onEditCompany && (
               <Button
@@ -571,6 +596,28 @@ function CompanyDetailsModal({ company, isOpen, onClose }: {
               <p className="text-gray-700 leading-relaxed">{company.description}</p>
             </div>
           )}
+
+          {/* Quick Action Links */}
+          <div className="flex flex-wrap gap-2 py-2 border-t border-b border-gray-100">
+            <Link href={`/companies/${company.id}?tab=vendors`}>
+              <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8 text-purple-600 hover:text-purple-800 hover:bg-purple-50">
+                <UserPlus className="h-3.5 w-3.5" />
+                Add Vendor
+              </Button>
+            </Link>
+            <Link href={`/companies/${company.id}?tab=vendors`}>
+              <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8 text-green-600 hover:text-green-800 hover:bg-green-50">
+                <Contact className="h-3.5 w-3.5" />
+                Add Contact
+              </Button>
+            </Link>
+            <Link href={`/companies/${company.id}?tab=reviews`}>
+              <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8 text-orange-600 hover:text-orange-800 hover:bg-orange-50">
+                <MessageSquare className="h-3.5 w-3.5" />
+                Add Comment
+              </Button>
+            </Link>
+          </div>
 
           {/* Tabs for Jobs and Vendors */}
           <Tabs defaultValue="jobs" className="w-full">

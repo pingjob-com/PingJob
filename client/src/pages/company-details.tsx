@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'wouter';
+import { useParams, useLocation, useSearch } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,12 @@ export default function CompanyDetails() {
   const { id, idSlug } = useParams();
   const { user } = useAuth();
   const [location, navigate] = useLocation();
+  const searchString = useSearch();
   const { toast } = useToast();
+  
+  const urlParams = new URLSearchParams(searchString);
+  const tabFromUrl = urlParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'jobs');
   
   // Extract ID from either the old format (:id) or new format (:idSlug)
   const getCompanyId = () => {
@@ -368,27 +373,21 @@ export default function CompanyDetails() {
               Add New Client
             </Button>
           </Link>
-          {totalVendorCount > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-xs gap-1.5 h-8"
-              onClick={() => {
-                const vendorsTab = document.querySelector('[data-value="vendors"]') as HTMLElement;
-                if (vendorsTab) vendorsTab.click();
-              }}
-            >
-              <Users className="h-3.5 w-3.5" />
-              Assign Vendor
-            </Button>
-          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs gap-1.5 h-8"
+            onClick={() => setActiveTab('vendors')}
+          >
+            <Users className="h-3.5 w-3.5" />
+            Assign Vendor
+          </Button>
           <Button 
             variant="outline" 
             size="sm" 
             className="text-xs gap-1.5 h-8"
             onClick={() => {
-              const reviewsTab = document.querySelector('[data-value="reviews"]') as HTMLElement;
-              if (reviewsTab) reviewsTab.click();
+              setActiveTab('reviews');
               setTimeout(() => {
                 document.getElementById('review-form')?.scrollIntoView({ behavior: 'smooth' });
               }, 200);
@@ -400,7 +399,7 @@ export default function CompanyDetails() {
         </div>
 
         {/* Tabs Content */}
-        <Tabs defaultValue="jobs" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="jobs">Open Jobs ({companyDetails?.totalJobCount || openJobs.length})</TabsTrigger>
             {totalVendorCount > 0 && (

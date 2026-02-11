@@ -43,7 +43,10 @@ import {
   X,
   Edit,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  MessageSquare,
+  UserPlus,
+  Contact
 } from "lucide-react";
 
 // Company Card Component
@@ -117,19 +120,27 @@ function CompanyCard({ company, onSelectCompany, onFollowCompany }: {
             )}
           </div>
           
-          {/* Follow Button */}
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              onFollowCompany(company.id);
-            }}
-            variant="outline"
-            size="sm"
-            className="text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <Heart className="h-3 w-3 mr-1" />
-            Follow
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex flex-wrap justify-center gap-1 mt-1">
+            <Link href={`/companies/${company.id}?tab=vendors`} onClick={(e: any) => e.stopPropagation()}>
+              <Button variant="ghost" size="sm" className="text-[10px] gap-0.5 h-6 text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-1.5">
+                <UserPlus className="h-2.5 w-2.5" />
+                Vendor
+              </Button>
+            </Link>
+            <Link href={`/companies/${company.id}?tab=vendors`} onClick={(e: any) => e.stopPropagation()}>
+              <Button variant="ghost" size="sm" className="text-[10px] gap-0.5 h-6 text-green-600 hover:text-green-800 hover:bg-green-50 px-1.5">
+                <Contact className="h-2.5 w-2.5" />
+                Contact
+              </Button>
+            </Link>
+            <Link href={`/companies/${company.id}?tab=reviews`} onClick={(e: any) => e.stopPropagation()}>
+              <Button variant="ghost" size="sm" className="text-[10px] gap-0.5 h-6 text-orange-600 hover:text-orange-800 hover:bg-orange-50 px-1.5">
+                <MessageSquare className="h-2.5 w-2.5" />
+                Comment
+              </Button>
+            </Link>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -202,6 +213,27 @@ function SearchResults({ companies, onSelectCompany, onFollowCompany }: {
                   >
                     <Heart className="h-4 w-4" />
                   </Button>
+                </div>
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <Link href={`/companies/${company.id}?tab=vendors`}>
+                    <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-2">
+                      <UserPlus className="h-3 w-3" />
+                      Add Vendor
+                    </Button>
+                  </Link>
+                  <Link href={`/companies/${company.id}?tab=vendors`}>
+                    <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-green-600 hover:text-green-800 hover:bg-green-50 px-2">
+                      <Contact className="h-3 w-3" />
+                      Add Contact
+                    </Button>
+                  </Link>
+                  <Link href={`/companies/${company.id}?tab=reviews`}>
+                    <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-orange-600 hover:text-orange-800 hover:bg-orange-50 px-2">
+                      <MessageSquare className="h-3 w-3" />
+                      Add Comment
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>

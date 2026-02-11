@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Building2, MapPin, Clock, DollarSign, Users, Filter, SortAsc, Briefcase, Plus, Edit, FileText, Menu, X } from "lucide-react";
+import { Building2, MapPin, Clock, DollarSign, Users, Filter, SortAsc, Briefcase, Plus, Edit, FileText, Menu, X, MessageSquare, UserPlus, Contact } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -797,6 +797,27 @@ export default function Jobs() {
                           </div>
                         </CardContent>
                       </Card>
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-2 mt-1 px-1">
+                        <Link href={`/companies/${job.companyId}?tab=vendors`}>
+                          <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-2">
+                            <UserPlus className="h-3 w-3" />
+                            Add Vendor
+                          </Button>
+                        </Link>
+                        <Link href={`/companies/${job.companyId}?tab=vendors`}>
+                          <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-green-600 hover:text-green-800 hover:bg-green-50 px-2">
+                            <Contact className="h-3 w-3" />
+                            Add Contact
+                          </Button>
+                        </Link>
+                        <Link href={`/companies/${job.companyId}?tab=reviews`}>
+                          <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-orange-600 hover:text-orange-800 hover:bg-orange-50 px-2">
+                            <MessageSquare className="h-3 w-3" />
+                            Add Comment
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   ))}
                 </div>
