@@ -2439,6 +2439,159 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // === Company Reviews / Comments ===
+
+  app.get('/api/companies/:id/reviews', async (req, res) => {
+    try {
+      const companyId = parseInt(req.params.id);
+      if (isNaN(companyId)) return res.status(400).json({ message: 'Invalid company ID' });
+
+      const [reviews, ratingSummary] = await Promise.all([
+        storage.getApprovedReviews(companyId),
+        storage.getCompanyRatingSummary(companyId)
+      ]);
+
+      const userIds = [...new Set(reviews.filter((r: any) => r.userId).map((r: any) => r.userId))];
+      const userMap: Record<string, any> = {};
+      for (const uid of userIds) {
+        const u = await storage.getUser(uid);
+        if (u) userMap[uid] = { firstName: u.firstName, lastName: u.lastName, profileImageUrl: u.profileImageUrl };
+      }
+
+      const enriched = reviews.map((r: any) => ({
+        ...r,
+        author: r.userId && userMap[r.userId]
+          ? `${userMap[r.userId].firstName || ''} ${userMap[r.userId].lastName || ''}`.trim()
+          : r.authorName || 'Anonymous',
+        authorAvatar: r.userId && userMap[r.userId] ? userMap[r.userId].profileImageUrl : null,
+      }));
+
+      const parentReviews = enriched.filter((r: any) => !r.parentId);
+      const replies = enriched.filter((r: any) => r.parentId);
+      const threaded = parentReviews.map((parent: any) => ({
+        ...parent,
+        replies: replies.filter((r: any) => r.parentId === parent.id),
+      }));
+
+      res.json({ reviews: threaded, ratingSummary });
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      res.status(500).json({ message: 'Failed to fetch reviews' });
+    }
+  });
+
+  app.post('/api/companies/:id/reviews', async (req: any, res) => {
+    try {
+      const companyId = parseInt(req.params.id);
+      if (isNaN(companyId)) return res.status(400).json({ message: 'Invalid company ID' });
+
+      const { rating, title, body, authorName, authorEmail, parentId, vendorId } = req.body;
+      if (!body || body.trim().length < 3) {
+        return res.status(400).json({ message: 'Comment body is required (at least 3 characters)' });
+      }
+      if (rating !== undefined && rating !== null && (rating < 1 || rating > 5)) {
+        return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+      }
+
+      const userId = req.user?.id || null;
+
+      const review = await storage.createCompanyReview({
+        companyId,
+        vendorId: vendorId ? parseInt(vendorId) : null,
+        parentId: parentId ? parseInt(parentId) : null,
+        userId,
+        authorName: userId ? null : (authorName || null),
+        authorEmail: userId ? null : (authorEmail || null),
+        rating: parentId ? null : (rating || null),
+        title: parentId ? null : (title || null),
+        body: body.trim(),
+      });
+
+      res.status(201).json({ message: 'Your comment has been submitted and is pending approval.', review });
+    } catch (error) {
+      console.error('Error creating review:', error);
+      res.status(500).json({ message: 'Failed to submit review' });
+    }
+  });
+
+  app.patch('/api/reviews/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const reviewId = parseInt(req.params.id);
+      if (isNaN(reviewId)) return res.status(400).json({ message: 'Invalid review ID' });
+
+      const review = await storage.getReviewById(reviewId);
+      if (!review) return res.status(404).json({ message: 'Review not found' });
+      if (review.status !== 'pending') return res.status(403).json({ message: 'Only pending reviews can be edited' });
+      if (review.userId !== req.user.id) return res.status(403).json({ message: 'You can only edit your own reviews' });
+
+      const { title, body, rating } = req.body;
+      const updateData: any = {};
+      if (title !== undefined) updateData.title = title;
+      if (body !== undefined) updateData.body = body;
+      if (rating !== undefined) updateData.rating = rating;
+
+      const updated = await storage.updateReview(reviewId, updateData);
+      res.json(updated);
+    } catch (error) {
+      console.error('Error updating review:', error);
+      res.status(500).json({ message: 'Failed to update review' });
+    }
+  });
+
+  app.get('/api/admin/reviews', async (req: any, res) => {
+    try {
+      const reviews = await storage.getPendingReviews();
+
+      const companyIds = [...new Set(reviews.map((r: any) => r.companyId))];
+      const companyMap: Record<number, string> = {};
+      for (const cid of companyIds) {
+        const c = await storage.getCompanyById(cid);
+        if (c) companyMap[cid] = (c as any).name;
+      }
+
+      const enriched = reviews.map((r: any) => ({
+        ...r,
+        companyName: companyMap[r.companyId] || 'Unknown',
+      }));
+
+      res.json(enriched);
+    } catch (error) {
+      console.error('Error fetching pending reviews:', error);
+      res.status(500).json({ message: 'Failed to fetch pending reviews' });
+    }
+  });
+
+  app.patch('/api/admin/reviews/:id', async (req: any, res) => {
+    try {
+      const reviewId = parseInt(req.params.id);
+      const { status } = req.body;
+      if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: 'Status must be approved or rejected' });
+      }
+
+      const adminId = req.user?.id || 'admin';
+      const updated = status === 'approved'
+        ? await storage.approveReview(reviewId, adminId)
+        : await storage.rejectReview(reviewId, adminId);
+
+      res.json(updated);
+    } catch (error) {
+      console.error('Error moderating review:', error);
+      res.status(500).json({ message: 'Failed to moderate review' });
+    }
+  });
+
+  app.delete('/api/admin/reviews/:id', async (req: any, res) => {
+    try {
+      const reviewId = parseInt(req.params.id);
+      await storage.deleteReview(reviewId);
+      res.json({ message: 'Review deleted' });
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      res.status(500).json({ message: 'Failed to delete review' });
+    }
+  });
+
   // Company update endpoint with logo upload support
   app.patch('/api/companies/:id', isAuthenticated, logoUpload.single('logo'), async (req: any, res) => {
     try {

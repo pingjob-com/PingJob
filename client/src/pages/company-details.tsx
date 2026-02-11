@@ -1,13 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Briefcase, Users, Globe, Calendar, Heart, ArrowLeft, ExternalLink } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { MapPin, Briefcase, Users, Globe, Calendar, Heart, ArrowLeft, ExternalLink, Star, MessageSquare, Send, Reply } from 'lucide-react';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { Link } from 'wouter';
 import { resolveLogoUrl } from "@/lib/apiConfig";
 import { useAuth } from '@/hooks/use-auth';
@@ -105,6 +107,66 @@ export default function CompanyDetails() {
     },
     enabled: !!companyId && !isNaN(companyId)
   });
+
+  const { data: reviewsData } = useQuery({
+    queryKey: ['/api/companies', companyId, 'reviews'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/companies/${companyId}/reviews`);
+      return response.json();
+    },
+    enabled: !!companyId && !isNaN(companyId)
+  });
+
+  const [reviewBody, setReviewBody] = useState('');
+  const [reviewTitle, setReviewTitle] = useState('');
+  const [reviewRating, setReviewRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [replyBody, setReplyBody] = useState('');
+
+  const submitReviewMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', `/api/companies/${companyId}/reviews`, data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Submitted!', description: data.message || 'Your comment is pending approval.' });
+      setReviewBody('');
+      setReviewTitle('');
+      setReviewRating(0);
+      setGuestName('');
+      setGuestEmail('');
+      setReplyingTo(null);
+      setReplyBody('');
+      queryClient.invalidateQueries({ queryKey: ['/api/companies', companyId, 'reviews'] });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to submit. Please try again.', variant: 'destructive' });
+    }
+  });
+
+  const handleSubmitReview = () => {
+    if (!reviewBody.trim()) return;
+    submitReviewMutation.mutate({
+      body: reviewBody,
+      title: reviewTitle || undefined,
+      rating: reviewRating > 0 ? reviewRating : undefined,
+      authorName: !user ? guestName || undefined : undefined,
+      authorEmail: !user ? guestEmail || undefined : undefined,
+    });
+  };
+
+  const handleSubmitReply = (parentId: number) => {
+    if (!replyBody.trim()) return;
+    submitReviewMutation.mutate({
+      body: replyBody,
+      parentId,
+      authorName: !user ? guestName || undefined : undefined,
+      authorEmail: !user ? guestEmail || undefined : undefined,
+    });
+  };
 
   // Set meta tags for SEO when company loads
   useEffect(() => {
@@ -305,6 +367,10 @@ export default function CompanyDetails() {
             {totalVendorCount > 0 && (
               <TabsTrigger value="vendors">Vendors ({totalVendorCount})</TabsTrigger>
             )}
+            <TabsTrigger value="reviews">
+              <MessageSquare className="h-4 w-4 mr-1" />
+              Reviews ({reviewsData?.ratingSummary?.totalReviews || 0})
+            </TabsTrigger>
           </TabsList>
 
           {/* Jobs Tab */}
@@ -421,6 +487,224 @@ export default function CompanyDetails() {
               </div>
             </TabsContent>
           )}
+          {/* Reviews Tab */}
+          <TabsContent value="reviews" className="space-y-6">
+            {/* Rating Summary */}
+            {reviewsData?.ratingSummary && reviewsData.ratingSummary.ratingCount > 0 && (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="text-4xl font-bold text-gray-900">
+                      {reviewsData.ratingSummary.avgRating}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map(s => (
+                          <Star
+                            key={s}
+                            className={`h-5 w-5 ${s <= Math.round(reviewsData.ratingSummary.avgRating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Based on {reviewsData.ratingSummary.ratingCount} rating{reviewsData.ratingSummary.ratingCount !== 1 ? 's' : ''} ({reviewsData.ratingSummary.totalReviews} review{reviewsData.ratingSummary.totalReviews !== 1 ? 's' : ''})
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Write Review Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Write a Review</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!user && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      placeholder="Your name (optional)"
+                      value={guestName}
+                      onChange={e => setGuestName(e.target.value)}
+                    />
+                    <Input
+                      placeholder="Your email (optional)"
+                      value={guestEmail}
+                      onChange={e => setGuestEmail(e.target.value)}
+                    />
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Rating:</span>
+                  {[1, 2, 3, 4, 5].map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setReviewRating(s)}
+                      onMouseEnter={() => setHoverRating(s)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`h-6 w-6 transition-colors ${
+                          s <= (hoverRating || reviewRating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  {reviewRating > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setReviewRating(0)}
+                      className="text-xs text-gray-400 hover:text-gray-600 ml-2"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <Input
+                  placeholder="Review title (optional)"
+                  value={reviewTitle}
+                  onChange={e => setReviewTitle(e.target.value)}
+                />
+                <Textarea
+                  placeholder="Share your experience with this company..."
+                  value={reviewBody}
+                  onChange={e => setReviewBody(e.target.value)}
+                  rows={4}
+                />
+                <div className="flex justify-between items-center">
+                  <p className="text-xs text-gray-400">All reviews are moderated before being published.</p>
+                  <Button
+                    onClick={handleSubmitReview}
+                    disabled={!reviewBody.trim() || submitReviewMutation.isPending}
+                    className="bg-linkedin-blue hover:bg-linkedin-dark"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {submitReviewMutation.isPending ? 'Submitting...' : 'Submit Review'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Reviews List */}
+            {reviewsData?.reviews && reviewsData.reviews.length > 0 ? (
+              <div className="space-y-4">
+                {reviewsData.reviews.map((review: any) => (
+                  <Card key={review.id}>
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-3">
+                        {review.authorAvatar ? (
+                          <img src={review.authorAvatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                            {(review.author || 'A').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-gray-900">{review.author}</span>
+                            <span className="text-xs text-gray-400">
+                              {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ''}
+                            </span>
+                          </div>
+                          {review.rating && (
+                            <div className="flex items-center gap-0.5 mt-1">
+                              {[1, 2, 3, 4, 5].map(s => (
+                                <Star key={s} className={`h-4 w-4 ${s <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+                              ))}
+                            </div>
+                          )}
+                          {review.title && (
+                            <h4 className="font-medium text-gray-900 mt-2">{review.title}</h4>
+                          )}
+                          <p className="text-gray-700 mt-1 whitespace-pre-wrap">{review.body}</p>
+
+                          <button
+                            type="button"
+                            onClick={() => { setReplyingTo(replyingTo === review.id ? null : review.id); setReplyBody(''); }}
+                            className="text-sm text-blue-600 hover:text-blue-800 mt-2 flex items-center gap-1"
+                          >
+                            <Reply className="h-3.5 w-3.5" />
+                            Reply
+                          </button>
+
+                          {/* Reply Form */}
+                          {replyingTo === review.id && (
+                            <div className="mt-3 pl-4 border-l-2 border-gray-200 space-y-2">
+                              {!user && (
+                                <Input
+                                  placeholder="Your name (optional)"
+                                  value={guestName}
+                                  onChange={e => setGuestName(e.target.value)}
+                                  className="text-sm"
+                                />
+                              )}
+                              <Textarea
+                                placeholder="Write a reply..."
+                                value={replyBody}
+                                onChange={e => setReplyBody(e.target.value)}
+                                rows={2}
+                                className="text-sm"
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSubmitReply(review.id)}
+                                  disabled={!replyBody.trim() || submitReviewMutation.isPending}
+                                  className="bg-linkedin-blue hover:bg-linkedin-dark"
+                                >
+                                  {submitReviewMutation.isPending ? 'Sending...' : 'Reply'}
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => setReplyingTo(null)}>
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Threaded Replies */}
+                          {review.replies && review.replies.length > 0 && (
+                            <div className="mt-4 pl-4 border-l-2 border-gray-100 space-y-3">
+                              {review.replies.map((reply: any) => (
+                                <div key={reply.id} className="flex items-start gap-2">
+                                  {reply.authorAvatar ? (
+                                    <img src={reply.authorAvatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-full bg-gray-400 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                      {(reply.author || 'A').charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-sm text-gray-900">{reply.author}</span>
+                                      <span className="text-xs text-gray-400">
+                                        {reply.createdAt ? new Date(reply.createdAt).toLocaleDateString() : ''}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-700 mt-0.5 whitespace-pre-wrap">{reply.body}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <MessageSquare className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Reviews Yet</h3>
+                  <p className="text-gray-600">Be the first to share your experience with this company.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
         </Tabs>
       </div>
     </div>

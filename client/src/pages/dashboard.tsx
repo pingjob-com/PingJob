@@ -727,6 +727,11 @@ function AdminDashboard() {
     queryKey: ['/api/companies/pending'],
   });
 
+  // Fetch pending reviews for moderation
+  const { data: pendingReviews = [], isLoading: loadingReviews } = useQuery({
+    queryKey: ['/api/admin/reviews'],
+  });
+
   // Fetch top companies for editing
   const { data: topCompanies = [] } = useQuery({
     queryKey: ['/api/companies/top'],
@@ -1029,11 +1034,12 @@ function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="companies" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="companies">Company Management</TabsTrigger>
-          <TabsTrigger value="jobs">Job Management</TabsTrigger>
-          <TabsTrigger value="vendors">Vendor Approvals</TabsTrigger>
-          <TabsTrigger value="admin-actions">Admin Actions</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="companies">Companies</TabsTrigger>
+          <TabsTrigger value="jobs">Jobs</TabsTrigger>
+          <TabsTrigger value="vendors">Vendors</TabsTrigger>
+          <TabsTrigger value="reviews">Reviews {Array.isArray(pendingReviews) && pendingReviews.length > 0 ? `(${pendingReviews.length})` : ''}</TabsTrigger>
+          <TabsTrigger value="admin-actions">Actions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="companies" className="space-y-6">
@@ -1142,6 +1148,115 @@ function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <VendorApprovals />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Reviews Moderation Tab */}
+        <TabsContent value="reviews" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending Review Approvals</CardTitle>
+              <CardDescription>
+                Review and moderate user comments and ratings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingReviews ? (
+                <div className="text-center py-8">Loading pending reviews...</div>
+              ) : !Array.isArray(pendingReviews) || pendingReviews.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No pending reviews to moderate
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pendingReviews.map((review: any) => (
+                    <div key={review.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="font-semibold text-gray-900">
+                              {review.authorName || review.userId || 'Anonymous'}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ''}
+                            </span>
+                            <Badge variant="secondary" className="text-xs">
+                              {review.companyName}
+                            </Badge>
+                            {review.parentId && (
+                              <Badge variant="outline" className="text-xs">Reply</Badge>
+                            )}
+                          </div>
+                          {review.rating && (
+                            <div className="flex items-center gap-0.5 mb-1">
+                              {[1, 2, 3, 4, 5].map((s: number) => (
+                                <Star key={s} className={`h-4 w-4 ${s <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+                              ))}
+                            </div>
+                          )}
+                          {review.title && (
+                            <h4 className="font-medium text-gray-800 mb-1">{review.title}</h4>
+                          )}
+                          <p className="text-gray-700 text-sm whitespace-pre-wrap">{review.body}</p>
+                        </div>
+                        <div className="flex gap-2 ml-4 flex-shrink-0">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-green-600 border-green-300 hover:bg-green-50"
+                            onClick={async () => {
+                              try {
+                                await apiRequest('PATCH', `/api/admin/reviews/${review.id}`, { status: 'approved' });
+                                toast({ title: 'Approved', description: 'Review has been approved.' });
+                                queryClient.invalidateQueries({ queryKey: ['/api/admin/reviews'] });
+                              } catch (e) {
+                                toast({ title: 'Error', description: 'Failed to approve review.', variant: 'destructive' });
+                              }
+                            }}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 border-red-300 hover:bg-red-50"
+                            onClick={async () => {
+                              try {
+                                await apiRequest('PATCH', `/api/admin/reviews/${review.id}`, { status: 'rejected' });
+                                toast({ title: 'Rejected', description: 'Review has been rejected.' });
+                                queryClient.invalidateQueries({ queryKey: ['/api/admin/reviews'] });
+                              } catch (e) {
+                                toast({ title: 'Error', description: 'Failed to reject review.', variant: 'destructive' });
+                              }
+                            }}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Reject
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-gray-400 hover:text-red-500"
+                            onClick={async () => {
+                              try {
+                                await apiRequest('DELETE', `/api/admin/reviews/${review.id}`);
+                                toast({ title: 'Deleted', description: 'Review has been deleted.' });
+                                queryClient.invalidateQueries({ queryKey: ['/api/admin/reviews'] });
+                              } catch (e) {
+                                toast({ title: 'Error', description: 'Failed to delete review.', variant: 'destructive' });
+                              }
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

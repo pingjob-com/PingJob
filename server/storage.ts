@@ -16,6 +16,7 @@ import {
   messages,
   notifications,
   checkoutSessions,
+  companyReviews,
   type UpsertUser,
   type InsertJob,
   type InsertCompany,
@@ -2954,5 +2955,63 @@ export const storage = {
       console.error('Error deleting checkout session:', error);
       return false;
     }
+  },
+
+  async createCompanyReview(data: any) {
+    const result = await db.insert(companyReviews).values(data).returning();
+    return result[0];
+  },
+
+  async getApprovedReviews(companyId: number) {
+    return db
+      .select()
+      .from(companyReviews)
+      .where(and(eq(companyReviews.companyId, companyId), eq(companyReviews.status, 'approved')))
+      .orderBy(desc(companyReviews.createdAt));
+  },
+
+  async getReviewById(reviewId: number) {
+    const result = await db.select().from(companyReviews).where(eq(companyReviews.id, reviewId));
+    return result[0] || null;
+  },
+
+  async updateReview(reviewId: number, data: any) {
+    const result = await db.update(companyReviews).set({ ...data, updatedAt: new Date() }).where(eq(companyReviews.id, reviewId)).returning();
+    return result[0];
+  },
+
+  async getPendingReviews() {
+    return db
+      .select()
+      .from(companyReviews)
+      .where(eq(companyReviews.status, 'pending'))
+      .orderBy(desc(companyReviews.createdAt));
+  },
+
+  async approveReview(reviewId: number, adminId: string) {
+    const result = await db.update(companyReviews).set({ status: 'approved', approvedBy: adminId, updatedAt: new Date() }).where(eq(companyReviews.id, reviewId)).returning();
+    return result[0];
+  },
+
+  async rejectReview(reviewId: number, adminId: string) {
+    const result = await db.update(companyReviews).set({ status: 'rejected', approvedBy: adminId, updatedAt: new Date() }).where(eq(companyReviews.id, reviewId)).returning();
+    return result[0];
+  },
+
+  async deleteReview(reviewId: number) {
+    await db.delete(companyReviews).where(eq(companyReviews.id, reviewId));
+    return true;
+  },
+
+  async getCompanyRatingSummary(companyId: number) {
+    const result = await db
+      .select({
+        avgRating: sql<number>`ROUND(AVG(${companyReviews.rating})::numeric, 1)`,
+        totalReviews: sql<number>`COUNT(*)`,
+        ratingCount: sql<number>`COUNT(${companyReviews.rating})`,
+      })
+      .from(companyReviews)
+      .where(and(eq(companyReviews.companyId, companyId), eq(companyReviews.status, 'approved')));
+    return result[0] || { avgRating: 0, totalReviews: 0, ratingCount: 0 };
   }
 };

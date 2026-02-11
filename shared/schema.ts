@@ -720,6 +720,39 @@ export type CompanySEOData = {
   }[];
 };
 
+// Company Reviews / Comments (forum-style with ratings)
+export const companyReviews = pgTable("company_reviews", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id).notNull(),
+  vendorId: integer("vendor_id").references(() => vendors.id),
+  parentId: integer("parent_id"),
+  userId: varchar("user_id").references(() => users.id),
+  authorName: varchar("author_name"),
+  authorEmail: varchar("author_email"),
+  rating: integer("rating"),
+  title: varchar("title"),
+  body: text("body").notNull(),
+  status: varchar("status", { enum: ["pending", "approved", "rejected"] }).default("pending"),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const companyReviewRelations = relations(companyReviews, ({ one }) => ({
+  company: one(companies, {
+    fields: [companyReviews.companyId],
+    references: [companies.id],
+  }),
+  vendor: one(vendors, {
+    fields: [companyReviews.vendorId],
+    references: [vendors.id],
+  }),
+  user: one(users, {
+    fields: [companyReviews.userId],
+    references: [users.id],
+  }),
+}));
+
 // Checkout sessions - prevents random access to /checkout page
 export const checkoutSessions = pgTable("checkout_sessions", {
   id: serial("id").primaryKey(),
@@ -763,3 +796,14 @@ export const insertCheckoutSessionSchema = createInsertSchema(checkoutSessions).
 });
 export type CheckoutSession = typeof checkoutSessions.$inferSelect;
 export type InsertCheckoutSession = z.infer<typeof insertCheckoutSessionSchema>;
+
+// Company Reviews
+export const insertCompanyReviewSchema = createInsertSchema(companyReviews).omit({
+  id: true,
+  status: true,
+  approvedBy: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type CompanyReview = typeof companyReviews.$inferSelect;
+export type InsertCompanyReview = z.infer<typeof insertCompanyReviewSchema>;
