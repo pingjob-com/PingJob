@@ -26,6 +26,7 @@ import AdBanner from "@/components/ads/AdBanner";
 import GoogleAdsense from "@/components/ads/GoogleAdsense";
 import SimpleFooter from "@/components/simple-footer";
 import BackToTopButton from "@/components/back-to-top-button";
+import { generateCompanyUrl } from "../../../shared/slug-utils";
 
 // Helper function to highlight search terms
 const highlightSearchTerms = (text: string, searchTerm: string) => {
@@ -799,19 +800,19 @@ export default function Jobs() {
                       </Card>
                       {/* Action Buttons */}
                       <div className="flex flex-wrap gap-2 mt-1 px-1">
-                        <Link href={`/companies/${job.companyId}?tab=vendors`}>
+                        <Link href={`${generateCompanyUrl(job.companyId, job.company?.name || 'company')}?tab=vendors`}>
                           <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-2">
                             <UserPlus className="h-3 w-3" />
                             Add Vendor
                           </Button>
                         </Link>
-                        <Link href={`/companies/${job.companyId}?tab=vendors`}>
+                        <Link href={`${generateCompanyUrl(job.companyId, job.company?.name || 'company')}?tab=vendors`}>
                           <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-green-600 hover:text-green-800 hover:bg-green-50 px-2">
                             <Contact className="h-3 w-3" />
                             Add Contact
                           </Button>
                         </Link>
-                        <Link href={`/companies/${job.companyId}?tab=reviews`}>
+                        <Link href={`${generateCompanyUrl(job.companyId, job.company?.name || 'company')}?tab=reviews`}>
                           <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-orange-600 hover:text-orange-800 hover:bg-orange-50 px-2">
                             <MessageSquare className="h-3 w-3" />
                             Add Comment

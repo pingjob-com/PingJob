@@ -10,7 +10,7 @@ const logoPath = 'https://cdn.pingjob.com/logo.png';
 import { useAuth } from "@/hooks/use-auth";
 import JobApplicationModal from "@/components/modals/job-application-modal";
 import { resolveLogoUrl } from "@/lib/apiConfig";
-import { generateJobUrl, parseSlugUrl } from "../../../shared/slug-utils";
+import { generateJobUrl, generateCompanyUrl, parseSlugUrl } from "../../../shared/slug-utils";
 import GoogleAdManager from "@/components/ads/GoogleAdManager";
 
 export default function JobDetailsSimple() {
@@ -535,7 +535,7 @@ export default function JobDetailsSimple() {
                   </Button>
                 </Link>
                 {job?.companyId && (
-                  <Link href={`/companies/${job.companyId}?tab=vendors`}>
+                  <Link href={`${generateCompanyUrl(job.companyId, (job as any).companyName || job.company?.name || 'company')}?tab=vendors`}>
                     <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7">
                       <Users className="h-3 w-3" />
                       Assign Vendor
@@ -543,7 +543,7 @@ export default function JobDetailsSimple() {
                   </Link>
                 )}
                 {job?.companyId && (
-                  <Link href={`/companies/${job.companyId}?tab=vendors`}>
+                  <Link href={`${generateCompanyUrl(job.companyId, (job as any).companyName || job.company?.name || 'company')}?tab=vendors`}>
                     <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7">
                       <Briefcase className="h-3 w-3" />
                       Add Contacts
@@ -551,7 +551,7 @@ export default function JobDetailsSimple() {
                   </Link>
                 )}
                 {job?.companyId && (
-                  <Link href={`/companies/${job.companyId}?tab=reviews`}>
+                  <Link href={`${generateCompanyUrl(job.companyId, (job as any).companyName || job.company?.name || 'company')}?tab=reviews`}>
                     <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7">
                       <MessageSquare className="h-3 w-3" />
                       Add Comments
@@ -666,7 +666,7 @@ export default function JobDetailsSimple() {
                       </div>
                     </Link>
                     {job?.companyId && (
-                      <Link href={`/companies/${job.companyId}?tab=vendors`}>
+                      <Link href={`${generateCompanyUrl(job.companyId, (job as any).companyName || job.company?.name || 'company')}?tab=vendors`}>
                         <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer">
                           <Users className="h-3.5 w-3.5" />
                           <span>Assign Vendor</span>
@@ -674,7 +674,7 @@ export default function JobDetailsSimple() {
                       </Link>
                     )}
                     {job?.companyId && (
-                      <Link href={`/companies/${job.companyId}?tab=vendors`}>
+                      <Link href={`${generateCompanyUrl(job.companyId, (job as any).companyName || job.company?.name || 'company')}?tab=vendors`}>
                         <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-green-50 hover:text-green-700 transition-colors cursor-pointer">
                           <Briefcase className="h-3.5 w-3.5" />
                           <span>Add Contacts</span>
@@ -682,7 +682,7 @@ export default function JobDetailsSimple() {
                       </Link>
                     )}
                     {job?.companyId && (
-                      <Link href={`/companies/${job.companyId}?tab=reviews`}>
+                      <Link href={`${generateCompanyUrl(job.companyId, (job as any).companyName || job.company?.name || 'company')}?tab=reviews`}>
                         <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-orange-50 hover:text-orange-700 transition-colors cursor-pointer">
                           <MessageSquare className="h-3.5 w-3.5" />
                           <span>Add Comments</span>

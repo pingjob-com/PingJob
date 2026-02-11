@@ -21,6 +21,7 @@ import { insertCompanySchema, insertJobSchema } from "@shared/schema";
 import { resolveLogoUrl } from "@/lib/apiConfig";
 import { z } from "zod";
 import { Link } from "wouter";
+import { generateCompanyUrl } from "../../../shared/slug-utils";
 const logoPath = 'https://cdn.pingjob.com/logo.png';
 import { getDisplayAddress } from "@/utils/addressUtils";
 import {
@@ -122,19 +123,19 @@ function CompanyCard({ company, onSelectCompany, onFollowCompany }: {
           
           {/* Action Buttons */}
           <div className="flex flex-wrap justify-center gap-1 mt-1">
-            <Link href={`/companies/${company.id}?tab=vendors`} onClick={(e: any) => e.stopPropagation()}>
+            <Link href={`${generateCompanyUrl(company.id, company.name)}?tab=vendors`} onClick={(e: any) => e.stopPropagation()}>
               <Button variant="ghost" size="sm" className="text-[10px] gap-0.5 h-6 text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-1.5">
                 <UserPlus className="h-2.5 w-2.5" />
                 Vendor
               </Button>
             </Link>
-            <Link href={`/companies/${company.id}?tab=vendors`} onClick={(e: any) => e.stopPropagation()}>
+            <Link href={`${generateCompanyUrl(company.id, company.name)}?tab=vendors`} onClick={(e: any) => e.stopPropagation()}>
               <Button variant="ghost" size="sm" className="text-[10px] gap-0.5 h-6 text-green-600 hover:text-green-800 hover:bg-green-50 px-1.5">
                 <Contact className="h-2.5 w-2.5" />
                 Contact
               </Button>
             </Link>
-            <Link href={`/companies/${company.id}?tab=reviews`} onClick={(e: any) => e.stopPropagation()}>
+            <Link href={`${generateCompanyUrl(company.id, company.name)}?tab=reviews`} onClick={(e: any) => e.stopPropagation()}>
               <Button variant="ghost" size="sm" className="text-[10px] gap-0.5 h-6 text-orange-600 hover:text-orange-800 hover:bg-orange-50 px-1.5">
                 <MessageSquare className="h-2.5 w-2.5" />
                 Comment
@@ -216,19 +217,19 @@ function SearchResults({ companies, onSelectCompany, onFollowCompany }: {
                 </div>
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-2 mt-2">
-                  <Link href={`/companies/${company.id}?tab=vendors`}>
+                  <Link href={`${generateCompanyUrl(company.id, company.name)}?tab=vendors`}>
                     <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-2">
                       <UserPlus className="h-3 w-3" />
                       Add Vendor
                     </Button>
                   </Link>
-                  <Link href={`/companies/${company.id}?tab=vendors`}>
+                  <Link href={`${generateCompanyUrl(company.id, company.name)}?tab=vendors`}>
                     <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-green-600 hover:text-green-800 hover:bg-green-50 px-2">
                       <Contact className="h-3 w-3" />
                       Add Contact
                     </Button>
                   </Link>
-                  <Link href={`/companies/${company.id}?tab=reviews`}>
+                  <Link href={`${generateCompanyUrl(company.id, company.name)}?tab=reviews`}>
                     <Button variant="ghost" size="sm" className="text-xs gap-1 h-7 text-orange-600 hover:text-orange-800 hover:bg-orange-50 px-2">
                       <MessageSquare className="h-3 w-3" />
                       Add Comment
