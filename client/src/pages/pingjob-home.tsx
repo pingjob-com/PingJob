@@ -1017,6 +1017,58 @@ export default function PingJobHome() {
           </Card>
         </div>
 
+        {/* Desktop Platform Features Section */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">What You Can Do on PingJob</h2>
+          <p className="text-gray-500 mb-5 text-sm">Explore our platform features to grow your business and career</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <Link href={user ? "/companies/create" : "/auth"}>
+              <Card className="border border-gray-200 hover:shadow-xl hover:border-blue-300 transition-all duration-300 cursor-pointer group h-full">
+                <CardContent className="p-6 flex flex-col items-start">
+                  <div className="bg-blue-100 group-hover:bg-blue-200 transition-colors p-3 rounded-xl mb-4">
+                    <Building2 className="h-7 w-7 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Add New Client / Company</h3>
+                  <p className="text-sm text-gray-600 mb-3">Register your company on PingJob to post jobs, manage applications, and connect with top talent.</p>
+                  <span className="text-blue-600 text-sm font-semibold group-hover:underline mt-auto">
+                    {user ? "Create Company" : "Sign in to Create"} &rarr;
+                  </span>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/companies">
+              <Card className="border border-gray-200 hover:shadow-xl hover:border-purple-300 transition-all duration-300 cursor-pointer group h-full">
+                <CardContent className="p-6 flex flex-col items-start">
+                  <div className="bg-purple-100 group-hover:bg-purple-200 transition-colors p-3 rounded-xl mb-4">
+                    <Users className="h-7 w-7 text-purple-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Find Vendors & Contacts</h3>
+                  <p className="text-sm text-gray-600 mb-3">Browse companies and click any company to see its vendor list, staffing partners, and contact details.</p>
+                  <span className="text-purple-600 text-sm font-semibold group-hover:underline mt-auto">
+                    Browse Companies &rarr;
+                  </span>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/companies">
+              <Card className="border border-gray-200 hover:shadow-xl hover:border-green-300 transition-all duration-300 cursor-pointer group h-full">
+                <CardContent className="p-6 flex flex-col items-start">
+                  <div className="bg-green-100 group-hover:bg-green-200 transition-colors p-3 rounded-xl mb-4">
+                    <Star className="h-7 w-7 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Company Reviews & Ratings</h3>
+                  <p className="text-sm text-gray-600 mb-3">Click any company to read and write Yelp-style reviews with star ratings, comments, and threaded discussions.</p>
+                  <span className="text-green-600 text-sm font-semibold group-hover:underline mt-auto">
+                    Browse & Review Companies &rarr;
+                  </span>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </div>
+
         {/* Desktop Main Content - Jobs Section */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             {/* Job Opportunities (10 rows × 4 jobs = 40 jobs per page) */}
@@ -1324,6 +1376,57 @@ export default function PingJobHome() {
               <Bot className="h-5 w-5 mx-auto mb-1" />
               <span className="text-xs font-medium">AI Matching</span>
             </div>
+          </div>
+        </div>
+
+        {/* Mobile Platform Features Section */}
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-3">What You Can Do</h2>
+          <div className="space-y-3">
+            <Link href={user ? "/companies/create" : "/auth"}>
+              <Card className="border border-gray-200 hover:shadow-lg transition-all cursor-pointer">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="bg-blue-100 p-2.5 rounded-xl flex-shrink-0">
+                    <Building2 className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-sm text-gray-900">Add New Client / Company</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">Register your company, post jobs, and connect with talent</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/companies">
+              <Card className="border border-gray-200 hover:shadow-lg transition-all cursor-pointer">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="bg-purple-100 p-2.5 rounded-xl flex-shrink-0">
+                    <Users className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-sm text-gray-900">Find Vendors & Contacts</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">Click any company to see its vendors and contacts</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/companies">
+              <Card className="border border-gray-200 hover:shadow-lg transition-all cursor-pointer">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="bg-green-100 p-2.5 rounded-xl flex-shrink-0">
+                    <Star className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-sm text-gray-900">Company Reviews & Ratings</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">Read and write Yelp-style reviews with star ratings</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
 
