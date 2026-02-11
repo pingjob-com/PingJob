@@ -409,27 +409,29 @@ export default function JobDetailsSimple() {
                 </div>
 
           <CardContent className="p-4 sm:p-8">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-              {job.title || 'No Title'}
-            </h1>
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-4 mb-4">
               {job.company?.logoUrl && job.company.logoUrl !== 'NULL' ? (
-                <div className="w-10 h-10 border border-gray-200 rounded overflow-hidden bg-gray-50 flex-shrink-0">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex-shrink-0">
                   <img 
                     src={resolveLogoUrl(job.company.logoUrl)}
                     alt={job.company?.name || 'Company'}
-                    className="w-full h-full object-contain p-1"
+                    className="w-full h-full object-contain p-1.5"
                   />
                 </div>
               ) : (
-                <div className="w-10 h-10 rounded overflow-hidden bg-linkedin-blue text-white font-bold text-sm flex items-center justify-center flex-shrink-0">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-linkedin-blue text-white font-bold text-xl sm:text-2xl flex items-center justify-center flex-shrink-0">
                   {((job as any).companyName || job.company?.name || 'U').charAt(0)}
                 </div>
               )}
-              <p className="text-base sm:text-lg text-gray-700 font-medium">
-                {(job as any).companyName || job.company?.name || 'Unknown Company'}
-              </p>
+              <div>
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  {(job as any).companyName || job.company?.name || 'Unknown Company'}
+                </h2>
+              </div>
             </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+              {job.title || 'No Title'}
+            </h1>
             <p className="text-sm sm:text-base text-gray-600 mb-4">
               {(() => {
                 const parts = [job.city, job.state].filter(Boolean);
