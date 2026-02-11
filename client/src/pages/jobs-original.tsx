@@ -54,7 +54,7 @@ export default function JobsOriginal() {
     staleTime: 0, // Force fresh data fetch
     queryFn: async () => {
       // If we have search terms, use the search API (no limit for search results)
-      if (filters.search.trim()) {
+      if ((filters.search || "").trim()) {
         let searchUrl = `/api/search?q=${encodeURIComponent(filters.search)}`;
         
         const response = await fetch(searchUrl);
@@ -286,7 +286,7 @@ export default function JobsOriginal() {
             </div>
 
             {/* Info message about job limits */}
-            {!filters.search.trim() && !user && (
+            {!(filters.search || "").trim() && !user && (
               <Card className="bg-blue-50 border-blue-200 mb-6">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
@@ -307,7 +307,7 @@ export default function JobsOriginal() {
             )}
 
             {/* Info message for logged-in users */}
-            {!filters.search.trim() && user && (
+            {!(filters.search || "").trim() && user && (
               <Card className="bg-green-50 border-green-200 mb-6">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
