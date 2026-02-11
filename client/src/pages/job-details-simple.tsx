@@ -412,9 +412,24 @@ export default function JobDetailsSimple() {
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
               {job.title || 'No Title'}
             </h1>
-            <p className="text-base sm:text-lg text-gray-700 font-medium mb-2">
-              {(job as any).companyName || job.company?.name || 'Unknown Company'}
-            </p>
+            <div className="flex items-center gap-3 mb-2">
+              {job.company?.logoUrl && job.company.logoUrl !== 'NULL' ? (
+                <div className="w-10 h-10 border border-gray-200 rounded overflow-hidden bg-gray-50 flex-shrink-0">
+                  <img 
+                    src={resolveLogoUrl(job.company.logoUrl)}
+                    alt={job.company?.name || 'Company'}
+                    className="w-full h-full object-contain p-1"
+                  />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded overflow-hidden bg-linkedin-blue text-white font-bold text-sm flex items-center justify-center flex-shrink-0">
+                  {((job as any).companyName || job.company?.name || 'U').charAt(0)}
+                </div>
+              )}
+              <p className="text-base sm:text-lg text-gray-700 font-medium">
+                {(job as any).companyName || job.company?.name || 'Unknown Company'}
+              </p>
+            </div>
             <p className="text-sm sm:text-base text-gray-600 mb-4">
               {(() => {
                 const parts = [job.city, job.state].filter(Boolean);
