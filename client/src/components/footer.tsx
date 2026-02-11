@@ -270,6 +270,11 @@ export default function Footer({ categories = [], selectedCategory = null, jobSt
                   Companies
                 </Link>
               </li>
+              <li>
+                <Link href="/companies/create" className="text-gray-400 hover:text-white text-sm transition-colors">
+                  Add New Client
+                </Link>
+              </li>
             </ul>
           </div>
           

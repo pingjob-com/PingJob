@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { MapPin, Briefcase, Users, Globe, Calendar, Heart, ArrowLeft, ExternalLink, Star, MessageSquare, Send, Reply } from 'lucide-react';
+import { MapPin, Briefcase, Users, Globe, Calendar, Heart, ArrowLeft, ExternalLink, Star, MessageSquare, Send, Reply, Plus } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { Link } from 'wouter';
 import { resolveLogoUrl } from "@/lib/apiConfig";
@@ -360,14 +360,53 @@ export default function CompanyDetails() {
           </CardContent>
         </Card>
 
+        {/* Quick Actions Bar */}
+        <div className="flex flex-wrap items-center gap-2 py-3">
+          <Link href="/companies/create">
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8">
+              <Plus className="h-3.5 w-3.5" />
+              Add New Client
+            </Button>
+          </Link>
+          {totalVendorCount > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs gap-1.5 h-8"
+              onClick={() => {
+                const vendorsTab = document.querySelector('[data-value="vendors"]') as HTMLElement;
+                if (vendorsTab) vendorsTab.click();
+              }}
+            >
+              <Users className="h-3.5 w-3.5" />
+              Assign Vendor
+            </Button>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs gap-1.5 h-8"
+            onClick={() => {
+              const reviewsTab = document.querySelector('[data-value="reviews"]') as HTMLElement;
+              if (reviewsTab) reviewsTab.click();
+              setTimeout(() => {
+                document.getElementById('review-form')?.scrollIntoView({ behavior: 'smooth' });
+              }, 200);
+            }}
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            Add Comments
+          </Button>
+        </div>
+
         {/* Tabs Content */}
         <Tabs defaultValue="jobs" className="space-y-6">
           <TabsList>
             <TabsTrigger value="jobs">Open Jobs ({companyDetails?.totalJobCount || openJobs.length})</TabsTrigger>
             {totalVendorCount > 0 && (
-              <TabsTrigger value="vendors">Vendors ({totalVendorCount})</TabsTrigger>
+              <TabsTrigger value="vendors" data-value="vendors">Vendors ({totalVendorCount})</TabsTrigger>
             )}
-            <TabsTrigger value="reviews">
+            <TabsTrigger value="reviews" data-value="reviews">
               <MessageSquare className="h-4 w-4 mr-1" />
               Reviews ({reviewsData?.ratingSummary?.totalReviews || 0})
             </TabsTrigger>
@@ -516,7 +555,7 @@ export default function CompanyDetails() {
             )}
 
             {/* Write Review Form */}
-            <Card>
+            <Card id="review-form">
               <CardHeader>
                 <CardTitle className="text-lg">Write a Review</CardTitle>
               </CardHeader>

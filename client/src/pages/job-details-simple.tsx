@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, MapPin, Users, Briefcase, Building, Menu, X, Search } from "lucide-react";
+import { ArrowLeft, MapPin, Users, Briefcase, Building, Menu, X, Search, Plus, Star, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 const logoPath = 'https://cdn.pingjob.com/logo.png';
 import { useAuth } from "@/hooks/use-auth";
@@ -525,6 +525,42 @@ export default function JobDetailsSimple() {
               )}
             </div>
 
+            {/* Mobile Quick Actions */}
+            <div className="md:hidden mt-4">
+              <div className="flex flex-wrap gap-2">
+                <Link href="/companies/create">
+                  <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7">
+                    <Plus className="h-3 w-3" />
+                    Add New Client
+                  </Button>
+                </Link>
+                {job?.companyId && (
+                  <Link href={`/companies/${job.companyId}`}>
+                    <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7">
+                      <Users className="h-3 w-3" />
+                      Assign Vendor
+                    </Button>
+                  </Link>
+                )}
+                {job?.companyId && (
+                  <Link href={`/companies/${job.companyId}`}>
+                    <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7">
+                      <Briefcase className="h-3 w-3" />
+                      Add Contacts
+                    </Button>
+                  </Link>
+                )}
+                {job?.companyId && (
+                  <Link href={`/companies/${job.companyId}`}>
+                    <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7">
+                      <MessageSquare className="h-3 w-3" />
+                      Add Comments
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+
             {/* Right Sidebar - Desktop Only */}
             <div className="hidden md:block w-80 flex-shrink-0">
               {/* Related Jobs Section */}
@@ -615,6 +651,47 @@ export default function JobDetailsSimple() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Quick Actions */}
+              <Card className="mt-6">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-gray-700">Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-1.5">
+                    <Link href="/companies/create">
+                      <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors cursor-pointer">
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>Add New Client</span>
+                      </div>
+                    </Link>
+                    {job?.companyId && (
+                      <Link href={`/companies/${job.companyId}`}>
+                        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer">
+                          <Users className="h-3.5 w-3.5" />
+                          <span>Assign Vendor</span>
+                        </div>
+                      </Link>
+                    )}
+                    {job?.companyId && (
+                      <Link href={`/companies/${job.companyId}`}>
+                        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-green-50 hover:text-green-700 transition-colors cursor-pointer">
+                          <Briefcase className="h-3.5 w-3.5" />
+                          <span>Add Contacts</span>
+                        </div>
+                      </Link>
+                    )}
+                    {job?.companyId && (
+                      <Link href={`/companies/${job.companyId}`}>
+                        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-orange-50 hover:text-orange-700 transition-colors cursor-pointer">
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          <span>Add Comments</span>
+                        </div>
+                      </Link>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
