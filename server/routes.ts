@@ -2059,11 +2059,51 @@ export function registerRoutes(app: Express) {
         return res.json({ results: [] });
       }
 
-      const rawJobs = await storage.searchJobs(query, 50);
-      const rawCompanies = await storage.searchCompanies(query, 20);
+      const stopWords = new Set([
+        'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+        'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+        'should', 'may', 'might', 'shall', 'can', 'need', 'dare', 'ought',
+        'used', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from',
+        'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below',
+        'between', 'out', 'off', 'over', 'under', 'again', 'further', 'then',
+        'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each',
+        'every', 'both', 'few', 'more', 'most', 'other', 'some', 'such', 'no',
+        'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just',
+        'because', 'but', 'and', 'or', 'if', 'while', 'about', 'up', 'down',
+        'that', 'this', 'these', 'those', 'it', 'its', 'i', 'me', 'my', 'we',
+        'our', 'you', 'your', 'he', 'him', 'his', 'she', 'her', 'they', 'them',
+        'their', 'what', 'which', 'who', 'whom', 'any', 'many', 'much', 'get',
+        'got', 'show', 'find', 'list', 'give', 'tell', 'know', 'want', 'look',
+        'see', 'please', 'help', 'let', 'make'
+      ]);
 
       const queryLower = query.toLowerCase().trim();
-      const queryTerms = queryLower.split(/\s+/).filter(t => t.length > 0);
+      const allTerms = queryLower.split(/\s+/).filter(t => t.length > 0);
+      const meaningfulTerms = allTerms.filter(t => !stopWords.has(t) && t.length >= 2);
+      const searchKeywords = meaningfulTerms.length > 0 ? meaningfulTerms.join(' ') : queryLower;
+
+      const searchTermsList = meaningfulTerms.length > 0 ? meaningfulTerms : allTerms.filter(t => t.length >= 2);
+
+      const jobSearches = await Promise.all(
+        searchTermsList.map(term => storage.searchJobs(term, 30))
+      );
+      const companySearches = await Promise.all(
+        searchTermsList.map(term => storage.searchCompanies(term, 15))
+      );
+
+      const jobMap = new Map<number, any>();
+      jobSearches.flat().forEach((job: any) => {
+        if (!jobMap.has(job.id)) jobMap.set(job.id, job);
+      });
+      const rawJobs = Array.from(jobMap.values());
+
+      const companyMap = new Map<number, any>();
+      companySearches.flat().forEach((company: any) => {
+        if (!companyMap.has(company.id)) companyMap.set(company.id, company);
+      });
+      const rawCompanies = Array.from(companyMap.values());
+
+      const queryTerms = searchTermsList;
 
       const scoredJobs = rawJobs.map((job: any) => {
         let score = 0;
@@ -2131,7 +2171,11 @@ export function registerRoutes(app: Express) {
           return { ...rest, _type: item._type };
         });
 
-      res.json({ results: allResults });
+      const summary = rawJobs.length > 0 || rawCompanies.length > 0
+        ? `Found ${rawJobs.length} job${rawJobs.length !== 1 ? 's' : ''} and ${rawCompanies.length} compan${rawCompanies.length !== 1 ? 'ies' : 'y'} matching "${searchTermsList.join(', ')}"`
+        : null;
+
+      res.json({ results: allResults, summary, totalJobs: rawJobs.length, totalCompanies: rawCompanies.length });
     } catch (error) {
       console.error('Error in AI search endpoint:', error);
       res.status(500).json({ message: 'AI search failed' });

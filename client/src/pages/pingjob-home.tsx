@@ -177,6 +177,7 @@ export default function PingJobHome() {
   const [aiResults, setAiResults] = useState<any[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSearched, setAiSearched] = useState(false);
+  const [aiSummary, setAiSummary] = useState("");
   const jobsPerPage = 40; // 4 columns × 10 rows
   const totalJobsToShow = 200; // 5 pages × 40 jobs
 
@@ -476,8 +477,10 @@ export default function PingJobHome() {
       const response = await apiRequest('GET', `/api/ai-search?q=${encodeURIComponent(aiQuery.trim())}`);
       const data = await response.json();
       setAiResults(data.results || []);
+      setAiSummary(data.summary || "");
     } catch (error) {
       setAiResults([]);
+      setAiSummary("");
     } finally {
       setAiLoading(false);
     }
@@ -958,6 +961,12 @@ export default function PingJobHome() {
                 </div>
               )}
 
+              {!aiLoading && aiSearched && aiSummary && (
+                <div className="bg-white rounded-lg px-4 py-2 mb-2 border border-blue-100">
+                  <p className="text-sm text-blue-700 font-medium">{aiSummary}</p>
+                </div>
+              )}
+
               {!aiLoading && aiSearched && aiResults.length === 0 && (
                 <div className="text-center py-6 bg-white rounded-lg">
                   <p className="text-gray-500 text-sm">No results found. Try a different query.</p>
@@ -1232,6 +1241,12 @@ export default function PingJobHome() {
                     <div className="h-2 bg-gray-200 rounded w-1/2"></div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {!aiLoading && aiSearched && aiSummary && (
+              <div className="bg-white rounded-lg px-3 py-2 mb-2 border border-blue-100">
+                <p className="text-xs text-blue-700 font-medium">{aiSummary}</p>
               </div>
             )}
 
