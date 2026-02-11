@@ -381,7 +381,7 @@ export default function JobDetailsSimple() {
             <div className="flex-1 min-w-0">
               <Card className="mb-6">
                 {/* Desktop Buttons - Inside Card Header */}
-                <div className="flex flex-row items-center gap-2 p-4 sm:p-8 hidden md:flex">
+                <div className="flex flex-row items-center gap-2 p-4 sm:px-8 sm:pt-6 sm:pb-0 hidden md:flex">
                   <Link href="/jobs" className="flex-initial">
                     <Button variant="ghost" className="px-4 py-2 text-base">
                       <ArrowLeft className="h-4 w-4 mr-2" />
@@ -408,7 +408,7 @@ export default function JobDetailsSimple() {
                   </div>
                 </div>
 
-          <CardContent className="p-4 sm:p-8">
+          <CardContent className="p-4 sm:px-8 sm:pt-4 sm:pb-8">
             <div className="flex items-center gap-4 mb-4">
               {job.company?.logoUrl && job.company.logoUrl !== 'NULL' ? (
                 <div className="w-16 h-16 sm:w-20 sm:h-20 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex-shrink-0">
