@@ -2064,15 +2064,15 @@ export function registerRoutes(app: Express) {
   // ── Feature 1: Live Hiring Activity Feed ──────────────────────────────────
   app.get('/api/stats/activity', async (req, res) => {
     try {
-      // Fetch recent client job postings and recent candidate applicants in parallel
+      // Fetch most-recent job postings (same order as homepage) and most-recent unique candidates
       const [recentJobsRes, recentCandidatesRes] = await Promise.all([
         pool.query(`
-          SELECT DISTINCT ON (c.id) c.name as company_name, j.title, j.created_at
+          SELECT c.name as company_name, j.title, j.created_at
           FROM jobs j
           JOIN companies c ON j.company_id = c.id
           WHERE j.is_active = true AND c.name IS NOT NULL AND c.name != ''
-          ORDER BY c.id, j.created_at DESC
-          LIMIT 10
+          ORDER BY j.created_at DESC
+          LIMIT 6
         `),
         pool.query(`
           SELECT DISTINCT ON (u.id) u.first_name, u.last_name, u.location, ja.applied_at
@@ -2080,17 +2080,22 @@ export function registerRoutes(app: Express) {
           JOIN users u ON ja.applicant_id = u.id
           WHERE u.first_name IS NOT NULL AND u.first_name != ''
           ORDER BY u.id, ja.applied_at DESC
-          LIMIT 10
+          LIMIT 20
         `)
       ]);
 
-      // Sort each by recency after deduplication
-      const recentJobs = recentJobsRes.rows
-        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 6);
+      const recentJobs = recentJobsRes.rows;
 
+      // Deduplicate candidates by full name, keep most recent per person
+      const seenNames = new Set<string>();
       const recentCandidates = recentCandidatesRes.rows
         .sort((a: any, b: any) => new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime())
+        .filter((c: any) => {
+          const name = `${c.first_name} ${c.last_name}`.toLowerCase();
+          if (seenNames.has(name)) return false;
+          seenNames.add(name);
+          return true;
+        })
         .slice(0, 6);
 
       // Build structured ticker items: interleave companies and candidates
