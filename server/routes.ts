@@ -1336,6 +1336,20 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  app.get('/api/user/skills', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.session?.user?.id;
+      const result = await pool.query(
+        `SELECT id, name, endorsements FROM skills WHERE user_id = $1 ORDER BY id`,
+        [userId]
+      );
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Error fetching user skills:', error);
+      res.json([]);
+    }
+  });
+
   app.post('/api/skills', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
@@ -2044,6 +2058,218 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error('Error fetching relevant companies:', error);
       res.status(500).json({ message: 'Failed to fetch relevant companies' });
+    }
+  });
+
+  // ── Feature 1: Live Hiring Activity Feed ──────────────────────────────────
+  app.get('/api/stats/activity', async (req, res) => {
+    try {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const lastHour = new Date(now.getTime() - 60 * 60 * 1000);
+
+      const [jobsTodayRes, appsTodayRes, appsLastHourRes, totalJobsRes, activeCompaniesRes] = await Promise.all([
+        pool.query(`SELECT COUNT(*) as count FROM jobs WHERE created_at >= $1 AND is_active = true`, [todayStart]),
+        pool.query(`SELECT COUNT(*) as count FROM job_applications WHERE applied_at >= $1`, [last24h]),
+        pool.query(`SELECT COUNT(*) as count FROM job_applications WHERE applied_at >= $1`, [lastHour]),
+        pool.query(`SELECT COUNT(*) as count FROM jobs WHERE is_active = true`),
+        pool.query(`SELECT COUNT(DISTINCT company_id) as count FROM jobs WHERE is_active = true AND created_at >= $1`, [last24h])
+      ]);
+
+      const jobsToday = parseInt(jobsTodayRes.rows[0]?.count || '0');
+      const appsToday = parseInt(appsTodayRes.rows[0]?.count || '0');
+      const appsLastHour = parseInt(appsLastHourRes.rows[0]?.count || '0');
+      const totalJobs = parseInt(totalJobsRes.rows[0]?.count || '0');
+      const activeCompanies = parseInt(activeCompaniesRes.rows[0]?.count || '0');
+
+      const tickers = [
+        jobsToday > 0 ? `${jobsToday} new jobs posted today` : `${totalJobs}+ active jobs available`,
+        appsLastHour > 0 ? `${appsLastHour} candidates applied in the last hour` : `${appsToday > 0 ? appsToday : 'Many'} candidates applied today`,
+        activeCompanies > 0 ? `${activeCompanies} companies actively hiring` : 'Hundreds of companies actively hiring',
+        'Recruiters reviewing applications now',
+        'New opportunities added every hour',
+        `${totalJobs}+ jobs across all categories`
+      ];
+
+      res.json({ tickers, stats: { jobsToday, appsToday, appsLastHour, totalJobs, activeCompanies } });
+    } catch (error) {
+      console.error('Activity stats error:', error);
+      res.json({
+        tickers: [
+          'New jobs posted daily',
+          'Candidates applying now',
+          'Companies actively hiring',
+          'Recruiters reviewing resumes',
+          'Fresh opportunities every hour'
+        ],
+        stats: {}
+      });
+    }
+  });
+
+  // ── Feature 2: Instant Job Match Bar ──────────────────────────────────────
+  app.post('/api/jobs/instant-match', async (req: any, res) => {
+    try {
+      const { text } = req.body;
+      if (!text || text.trim().length < 3) {
+        return res.status(400).json({ message: 'Please provide skills or resume text' });
+      }
+
+      const inputLower = text.toLowerCase();
+      const words = inputLower.split(/[\s,;|\/\n\r\t.()[\]{}]+/).filter((w: string) => w.length >= 2);
+      const stopWords = new Set(['the', 'and', 'for', 'with', 'have', 'has', 'are', 'was', 'been', 'from', 'this', 'that', 'they', 'will', 'can', 'not', 'but', 'his', 'her', 'their', 'our', 'you', 'all', 'one', 'two', 'new', 'old', 'use', 'used', 'work', 'worked', 'working', 'years', 'year', 'strong', 'good', 'great', 'team', 'able', 'skills', 'skill', 'experience', 'etc']);
+      const keywords = [...new Set(words.filter((w: string) => !stopWords.has(w) && w.length >= 3))].slice(0, 20);
+
+      if (keywords.length === 0) {
+        return res.json({ jobs: [], message: 'No meaningful keywords found' });
+      }
+
+      const conditions = keywords.map((kw: string, i: number) =>
+        `(j.title ILIKE $${i + 1} OR j.description ILIKE $${i + 1} OR j.requirements ILIKE $${i + 1} OR j.skills::text ILIKE $${i + 1})`
+      );
+      const params = keywords.map((kw: string) => `%${kw}%`);
+
+      const result = await pool.query(
+        `SELECT j.id, j.title, j.city, j.state, j.location, j.salary, j.skills, j.employment_type,
+                j.application_count, c.name as company_name, c.logo_url,
+                (${keywords.map((kw: string, i: number) =>
+                  `CASE WHEN j.title ILIKE $${i + 1} THEN 35 ELSE 0 END +
+                   CASE WHEN j.skills::text ILIKE $${i + 1} THEN 25 ELSE 0 END +
+                   CASE WHEN j.requirements ILIKE $${i + 1} THEN 15 ELSE 0 END +
+                   CASE WHEN j.description ILIKE $${i + 1} THEN 10 ELSE 0 END`
+                ).join(' + ')}) as raw_score
+         FROM jobs j
+         LEFT JOIN companies c ON j.company_id = c.id
+         WHERE j.is_active = true AND (${conditions.join(' OR ')})
+         ORDER BY raw_score DESC
+         LIMIT 6`,
+        params
+      );
+
+      const jobs = result.rows.map((job: any) => {
+        const jobSkills = Array.isArray(job.skills) ? job.skills : (typeof job.skills === 'string' ? [job.skills] : []);
+        const matchedSkills = keywords.filter((kw: string) =>
+          jobSkills.some((s: string) => s.toLowerCase().includes(kw)) ||
+          (job.title || '').toLowerCase().includes(kw)
+        );
+        const missingSkills = jobSkills.filter((s: string) =>
+          !keywords.some((kw: string) => s.toLowerCase().includes(kw))
+        ).slice(0, 2);
+
+        const rawScore = parseInt(job.raw_score) || 0;
+        const matchPct = Math.min(95, Math.max(25, Math.round(30 + (rawScore / Math.max(1, keywords.length * 85)) * 65)));
+
+        return {
+          id: job.id,
+          title: job.title,
+          companyName: job.company_name,
+          location: [job.city, job.state].filter(Boolean).join(', ') || job.location || 'Remote',
+          salary: job.salary,
+          employmentType: job.employment_type,
+          applicationCount: job.application_count,
+          matchPct,
+          matchedSkills: matchedSkills.slice(0, 3),
+          missingSkills
+        };
+      }).filter((j: any) => j.matchPct >= 25).slice(0, 3);
+
+      res.json({ jobs, keywords: keywords.slice(0, 8) });
+    } catch (error) {
+      console.error('Instant match error:', error);
+      res.status(500).json({ message: 'Matching failed' });
+    }
+  });
+
+  // ── Feature 4: Resume Score Teaser ────────────────────────────────────────
+  app.get('/api/user/resume-score-teaser', async (req: any, res) => {
+    try {
+      if (!req.user && !req.session?.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+      const user = req.user || req.session?.user;
+      const userId = user.id;
+
+      const [appScores, userSkills, profile] = await Promise.all([
+        pool.query(
+          `SELECT match_score, skills_score, experience_score, education_score FROM job_applications
+           WHERE applicant_id = $1 AND match_score IS NOT NULL ORDER BY applied_at DESC LIMIT 5`,
+          [userId]
+        ),
+        pool.query(`SELECT COUNT(*) as count FROM skills WHERE user_id = $1`, [userId]),
+        pool.query(`SELECT headline, summary, resume_url, profile_image_url FROM users WHERE id = $1`, [userId])
+      ]);
+
+      const userProfile = profile.rows[0] || {};
+      let score = 40;
+      const factors: string[] = [];
+
+      if (userProfile.resume_url) { score += 20; factors.push('Resume uploaded'); }
+      if (userProfile.headline) { score += 10; factors.push('Headline set'); }
+      if (userProfile.summary) { score += 10; factors.push('Summary complete'); }
+      const skillCount = parseInt(userSkills.rows[0]?.count || '0');
+      if (skillCount >= 5) { score += 15; factors.push(`${skillCount} skills listed`); }
+      else if (skillCount > 0) { score += 5; }
+      if (userProfile.profile_image_url) { score += 5; factors.push('Profile photo'); }
+
+      if (appScores.rows.length > 0) {
+        const avg = appScores.rows.reduce((sum: number, r: any) => sum + (parseFloat(r.match_score) || 0), 0) / appScores.rows.length;
+        score = Math.round((score + avg) / 2);
+      }
+
+      score = Math.min(98, Math.max(20, score));
+
+      const percentileMap = [
+        { min: 90, label: 'Top 5%' }, { min: 80, label: 'Top 15%' },
+        { min: 70, label: 'Top 30%' }, { min: 60, label: 'Top 45%' },
+        { min: 50, label: 'Top 60%' }, { min: 0, label: 'Bottom 40%' }
+      ];
+      const percentile = percentileMap.find(p => score >= p.min)?.label || 'Top 60%';
+
+      const tips: string[] = [];
+      if (!userProfile.resume_url) tips.push('Upload your resume');
+      if (!userProfile.headline) tips.push('Add a professional headline');
+      if (skillCount < 5) tips.push('Add more skills');
+      if (!userProfile.summary) tips.push('Write a summary');
+
+      res.json({ score, percentile, factors, tips: tips.slice(0, 2), hasApplications: appScores.rows.length > 0 });
+    } catch (error) {
+      console.error('Resume score teaser error:', error);
+      res.status(500).json({ message: 'Failed to compute score' });
+    }
+  });
+
+  // ── Feature 5: Smart Connect Hint ─────────────────────────────────────────
+  app.get('/api/jobs/:id/social-hints', async (req: any, res) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const user = req.user || req.session?.user;
+
+      const [appCountRes, jobRes] = await Promise.all([
+        pool.query(`SELECT COUNT(*) as count FROM job_applications WHERE job_id = $1`, [jobId]),
+        pool.query(`SELECT j.title, j.experience_level, j.category_id, j.skills, c.industry FROM jobs j LEFT JOIN companies c ON j.company_id = c.id WHERE j.id = $1`, [jobId])
+      ]);
+
+      const totalApplicants = parseInt(appCountRes.rows[0]?.count || '0');
+      const job = jobRes.rows[0];
+      const hints: string[] = [];
+
+      if (totalApplicants > 0) {
+        hints.push(`${totalApplicants} candidate${totalApplicants !== 1 ? 's' : ''} applied for this role`);
+      }
+      if (job?.experience_level) {
+        const levelMap: Record<string, string> = { entry: 'entry-level', mid: 'mid-level', senior: 'senior', executive: 'executive' };
+        const levelLabel = levelMap[job.experience_level] || job.experience_level;
+        hints.push(`Popular among ${levelLabel} professionals`);
+      }
+      if (job?.industry) {
+        hints.push(`Active in ${job.industry} industry`);
+      }
+
+      res.json({ hints: hints.slice(0, 2), totalApplicants });
+    } catch (error) {
+      console.error('Social hints error:', error);
+      res.json({ hints: [], totalApplicants: 0 });
     }
   });
 

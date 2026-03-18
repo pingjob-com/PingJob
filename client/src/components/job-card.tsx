@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { resolveLogoUrl } from "@/lib/apiConfig";
 import { useLocation, Link } from "wouter";
+import { JobFitExplainer, SmartConnectHint } from "@/components/engagement-features";
 import JobApplicationModal from "@/components/modals/job-application-modal";
 import JobEditModal from "@/components/modals/job-edit-modal";
 import ResumeApplicationsModal from "@/components/modals/resume-applications-modal";
@@ -42,6 +43,17 @@ export default function JobCard({ job, compact = false, showCompany = true }: Jo
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
+
+  const { data: userSkillsData } = useQuery({
+    queryKey: ['/api/user/skills'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/user/skills');
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!user && user.userType === 'job_seeker'
+  });
+  const userSkills: string[] = (userSkillsData || []).map((s: any) => s.name || s);
 
   const bookmarkMutation = useMutation({
     mutationFn: () => apiRequest('POST', '/api/bookmarks', { jobId: job.id }),
@@ -336,6 +348,18 @@ export default function JobCard({ job, compact = false, showCompany = true }: Jo
             <p className="text-gray-600 text-sm line-clamp-3">
               {formatDescription(job?.description)}
             </p>
+
+            {/* Feature 3: Job Fit Explainer - job seekers only */}
+            {user?.userType === 'job_seeker' && skillsArray.length > 0 && userSkills.length > 0 && (
+              <JobFitExplainer
+                jobSkills={skillsArray}
+                userSkills={userSkills}
+                jobTitle={job?.title || ''}
+              />
+            )}
+
+            {/* Feature 5: Smart Connect Hint */}
+            {user && <SmartConnectHint jobId={job.id} applicationCount={job?.applicationCount} />}
           </div>
 
           {/* Footer */}

@@ -51,6 +51,7 @@ import { JobCategories } from "@/components/job-categories";
 import Footer from "../components/footer";
 import GoogleAdsense from "@/components/ads/GoogleAdsense";
 import GoogleAdManager from "@/components/ads/GoogleAdManager";
+import { LiveActivityFeed, InstantJobMatchBar, ResumeScoreTeaser } from "@/components/engagement-features";
 
 // Helper function to format location - shows real location data when available
 const formatJobLocation = (job: any) => {
@@ -665,6 +666,8 @@ export default function PingJobHome() {
         </div>
       </header>
 
+      {/* Feature 2: Live Hiring Activity Feed Ticker */}
+      <LiveActivityFeed />
 
       {/* Universal Search Results Section - Visible on both mobile and desktop */}
       {showMainSearchResults && (
@@ -1016,6 +1019,12 @@ export default function PingJobHome() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Feature 1: Instant Job Match Bar */}
+        <InstantJobMatchBar />
+
+        {/* Feature 4: Resume Score Teaser - logged-in users only */}
+        {user && <ResumeScoreTeaser />}
 
         {/* Desktop Main Content - Jobs Section */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
