@@ -89,6 +89,7 @@ interface MatchJob {
   matchedSkills: string[];
   missingSkills: string[];
   applicationCount: number;
+  companyMatch?: boolean;
 }
 
 export function InstantJobMatchBar() {
@@ -145,7 +146,7 @@ export function InstantJobMatchBar() {
 
           <div className="flex gap-3 mb-4">
             <Textarea
-              placeholder="e.g. React, Node.js, 5 years experience, Python, AWS, fintech..."
+              placeholder="e.g. .NET developer at Tesla  —  or  —  React, Python, AWS fintech..."
               value={inputText}
               onChange={e => { setInputText(e.target.value); setError(""); }}
               className="flex-1 bg-white border-gray-200 shadow-sm resize-none h-16 text-sm"
@@ -170,10 +171,18 @@ export function InstantJobMatchBar() {
 
           {keywords.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-4">
-              <span className="text-xs text-gray-500 self-center">Matched keywords:</span>
-              {keywords.map((kw, i) => (
-                <Badge key={i} variant="secondary" className="text-xs bg-teal-100 text-teal-700">{kw}</Badge>
-              ))}
+              <span className="text-xs text-gray-500 self-center">Detected:</span>
+              {keywords.map((kw, i) => {
+                const isCompany = kw.startsWith('company:');
+                const label = isCompany ? kw.replace('company:', '') : kw;
+                return isCompany ? (
+                  <Badge key={i} className="text-xs bg-purple-100 text-purple-700 border-purple-200 border">
+                    🏢 {label}
+                  </Badge>
+                ) : (
+                  <Badge key={i} variant="secondary" className="text-xs bg-teal-100 text-teal-700">{label}</Badge>
+                );
+              })}
             </div>
           )}
 
@@ -210,6 +219,9 @@ export function InstantJobMatchBar() {
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-bold text-gray-400">#{i + 1}</span>
                           <h4 className="font-semibold text-sm text-gray-900 group-hover:text-blue-600 transition-colors truncate">{job.title}</h4>
+                          {job.companyMatch && (
+                            <Badge className="text-xs bg-purple-100 text-purple-700 border-0 py-0 flex-shrink-0">🏢 Company match</Badge>
+                          )}
                         </div>
                         <p className="text-xs text-gray-500 mb-2">{job.companyName} · {job.location}</p>
 

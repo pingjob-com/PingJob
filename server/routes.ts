@@ -2116,49 +2116,165 @@ export function registerRoutes(app: Express) {
         return res.status(400).json({ message: 'Please provide skills or resume text' });
       }
 
-      const inputLower = text.toLowerCase();
-      const words = inputLower.split(/[\s,;|\/\n\r\t.()[\]{}]+/).filter((w: string) => w.length >= 2);
-      const stopWords = new Set(['the', 'and', 'for', 'with', 'have', 'has', 'are', 'was', 'been', 'from', 'this', 'that', 'they', 'will', 'can', 'not', 'but', 'his', 'her', 'their', 'our', 'you', 'all', 'one', 'two', 'new', 'old', 'use', 'used', 'work', 'worked', 'working', 'years', 'year', 'strong', 'good', 'great', 'team', 'able', 'skills', 'skill', 'experience', 'etc']);
-      const keywords = [...new Set(words.filter((w: string) => !stopWords.has(w) && w.length >= 3))].slice(0, 20);
+      // ── Step 1: Preserve special tech tokens before splitting ─────────────
+      // Replace .NET, C++, C#, Node.js etc. with safe placeholders
+      const techMap: Record<string, string> = {};
+      let normalized = text;
+      const techPatterns = [
+        /\.NET(?:\s+Core)?(?:\s+\d+(?:\.\d+)*)?/gi,
+        /C\+\+/gi, /C#/gi, /F#/gi,
+        /Node\.js/gi, /Next\.js/gi, /Vue\.js/gi, /React\.js/gi,
+        /\.js\b/gi, /TypeScript/gi, /JavaScript/gi,
+        /ASP\.NET/gi, /ADO\.NET/gi,
+      ];
+      let placeholderIdx = 0;
+      for (const pattern of techPatterns) {
+        normalized = normalized.replace(pattern, (match: string) => {
+          const key = `__TECH${placeholderIdx++}__`;
+          techMap[key] = match.replace(/\./g, '').replace(/\+/g, 'plus').replace(/#/g, 'sharp').trim();
+          return ` ${key} `;
+        });
+      }
 
-      if (keywords.length === 0) {
+      // ── Step 2: Split input into candidate tokens ─────────────────────────
+      const rawTokens = normalized.split(/[\s,;|\/\n\r\t()\[\]{}'"]+/).map((t: string) => t.trim()).filter((t: string) => t.length >= 1);
+      const stopWords = new Set(['the', 'and', 'for', 'with', 'have', 'has', 'are', 'was', 'been', 'from', 'this', 'that', 'they', 'will', 'can', 'not', 'but', 'his', 'her', 'their', 'our', 'you', 'all', 'one', 'two', 'new', 'old', 'use', 'used', 'work', 'worked', 'working', 'years', 'year', 'strong', 'good', 'great', 'team', 'able', 'skills', 'skill', 'experience', 'etc', 'job', 'jobs', 'at', 'in', 'on', 'an', 'is', 'it', 'by', 'or', 'to', 'of', 'a']);
+
+      // Restore tech tokens back to original terms (case-preserved)
+      const resolvedTokens = rawTokens.map((t: string) => {
+        if (t.startsWith('__TECH') && techMap[t]) return techMap[t];
+        return t;
+      });
+
+      const candidateTokens = [...new Set(resolvedTokens.filter((t: string) => !stopWords.has(t.toLowerCase()) && t.length >= 2))];
+
+      if (candidateTokens.length === 0) {
         return res.json({ jobs: [], message: 'No meaningful keywords found' });
       }
 
-      const conditions = keywords.map((kw: string, i: number) =>
-        `(j.title ILIKE $${i + 1} OR j.description ILIKE $${i + 1} OR j.requirements ILIKE $${i + 1} OR j.skills::text ILIKE $${i + 1})`
-      );
-      const params = keywords.map((kw: string) => `%${kw}%`);
+      // ── Step 3: Detect company names from input ───────────────────────────
+      const fullInput = text.trim();
+      const inputLower = fullInput.toLowerCase();
+      const companyMatches: Array<{id: number, name: string}> = [];
 
-      const result = await pool.query(
-        `SELECT j.id, j.title, j.city, j.state, j.location, j.salary, j.skills, j.employment_type,
-                j.application_count, c.name as company_name, c.logo_url,
-                (${keywords.map((kw: string, i: number) =>
-                  `CASE WHEN j.title ILIKE $${i + 1} THEN 35 ELSE 0 END +
-                   CASE WHEN j.skills::text ILIKE $${i + 1} THEN 25 ELSE 0 END +
-                   CASE WHEN j.requirements ILIKE $${i + 1} THEN 15 ELSE 0 END +
-                   CASE WHEN j.description ILIKE $${i + 1} THEN 10 ELSE 0 END`
-                ).join(' + ')}) as raw_score
-         FROM jobs j
-         LEFT JOIN companies c ON j.company_id = c.id
-         WHERE j.is_active = true AND (${conditions.join(' OR ')})
-         ORDER BY raw_score DESC
-         LIMIT 6`,
-        params
-      );
+      // Tech skill stop-list — words that are tech skills, NOT company names
+      const techSkillWords = new Set(['net', 'developer', 'engineer', 'senior', 'junior', 'manager', 'architect', 'analyst', 'react', 'python', 'java', 'aws', 'azure', 'sql', 'javascript', 'typescript', 'angular', 'nodejs', 'spring', 'docker', 'kubernetes', 'devops', 'agile', 'scrum', 'cloud', 'data', 'software', 'backend', 'frontend', 'fullstack', 'golang', 'ruby', 'php', 'swift', 'kotlin', 'flutter', 'ios', 'android', 'linux', 'git', 'api', 'rest', 'css', 'html', 'sass', 'redux', 'graphql', 'mongodb', 'mysql', 'postgres', 'redis', 'kafka', 'spark', 'scala', 'hadoop', 'tensorflow', 'pytorch']);
 
+      // Look up each candidate token separately to avoid LIMIT issues
+      const tokenCompanyCheckPromises = candidateTokens
+        .filter((t: string) => t.length >= 4 && !techSkillWords.has(t.toLowerCase()))
+        .map(async (token: string) => {
+          const result = await pool.query(
+            `SELECT id, name FROM companies WHERE name ILIKE $1 AND status = 'approved' ORDER BY LENGTH(name) ASC LIMIT 5`,
+            [`%${token}%`]
+          );
+          // Only accept company if the token actually appears as a word in the company name AND in the user's input
+          return result.rows.filter((company: any) => {
+            const companyWords = company.name.toLowerCase().split(/\s+/);
+            return companyWords.some((cw: string) => 
+              cw.length >= 4 && 
+              inputLower.includes(cw) &&          // word is in user's input
+              token.toLowerCase().includes(cw)     // token matches the company word
+            );
+          });
+        });
+
+      const tokenCompanyResults = await Promise.all(tokenCompanyCheckPromises);
+      const seenCompanyIds = new Set<number>();
+      for (const matches of tokenCompanyResults) {
+        for (const company of matches) {
+          if (!seenCompanyIds.has(company.id)) {
+            seenCompanyIds.add(company.id);
+            companyMatches.push(company);
+          }
+        }
+      }
+
+      // ── Step 4: Separate skill keywords from company names ────────────────
+      const detectedCompanyNames = companyMatches.map((c: any) => c.name.toLowerCase());
+      const skillKeywords = candidateTokens.filter((t: string) => {
+        // Remove tokens that are purely company name matches
+        return !detectedCompanyNames.some((cn: string) => cn.includes(t.toLowerCase()) && t.length >= 5);
+      }).slice(0, 15);
+
+      // ── Step 5: Build smart SQL query ─────────────────────────────────────
+      const hasCompanyFilter = companyMatches.length > 0;
+      const companyIds = companyMatches.map((c: any) => c.id);
+
+      let params: any[] = [];
+      let paramIdx = 1;
+
+      // Skill params (each skill gets a LIKE param)
+      const skillParams = skillKeywords.map((kw: string) => `%${kw}%`);
+      params.push(...skillParams);
+      const skillParamEnd = paramIdx + skillKeywords.length - 1;
+
+      // Company filter params
+      let companyFilterSql = '';
+      if (hasCompanyFilter) {
+        const companyPlaceholders = companyIds.map((_: number, i: number) => `$${skillKeywords.length + 1 + i}`);
+        params.push(...companyIds);
+        companyFilterSql = `AND j.company_id IN (${companyPlaceholders.join(',')})`;
+      }
+
+      // Build scoring expression
+      const skillScoring = skillKeywords.length > 0 ? skillKeywords.map((kw: string, i: number) => {
+        const p = i + 1;
+        return `CASE WHEN j.title ILIKE $${p} THEN 50 ELSE 0 END +
+                CASE WHEN j.skills::text ILIKE $${p} THEN 40 ELSE 0 END +
+                CASE WHEN j.requirements ILIKE $${p} THEN 20 ELSE 0 END +
+                CASE WHEN j.description ILIKE $${p} THEN 10 ELSE 0 END`;
+      }).join(' + ') : '0';
+
+      // Require at least one skill OR company match
+      const skillConditions = skillKeywords.length > 0 ? skillKeywords.map((kw: string, i: number) =>
+        `(j.title ILIKE $${i + 1} OR j.skills::text ILIKE $${i + 1} OR j.requirements ILIKE $${i + 1} OR j.description ILIKE $${i + 1})`
+      ) : [];
+
+      const whereClause = skillConditions.length > 0
+        ? `(${skillConditions.join(' OR ')}) ${companyFilterSql}`
+        : `j.is_active = true ${companyFilterSql}`;
+
+      const sql = `
+        SELECT j.id, j.company_id, j.title, j.city, j.state, j.location, j.salary, j.skills, j.employment_type,
+               j.application_count, c.name as company_name, c.logo_url,
+               (${skillScoring}) as raw_score
+        FROM jobs j
+        LEFT JOIN companies c ON j.company_id = c.id
+        WHERE j.is_active = true AND ${whereClause}
+        ORDER BY raw_score DESC
+        LIMIT 8
+      `;
+
+      const result = await pool.query(sql, params);
+
+      // ── Step 6: Score and format results ─────────────────────────────────
       const jobs = result.rows.map((job: any) => {
-        const jobSkills = Array.isArray(job.skills) ? job.skills : (typeof job.skills === 'string' ? [job.skills] : []);
-        const matchedSkills = keywords.filter((kw: string) =>
-          jobSkills.some((s: string) => s.toLowerCase().includes(kw)) ||
-          (job.title || '').toLowerCase().includes(kw)
-        );
+        const jobSkills = Array.isArray(job.skills) ? job.skills : [];
+        const jobTitleLower = (job.title || '').toLowerCase();
+        const jobCompanyLower = (job.company_name || '').toLowerCase();
+
+        // Check which skills from input are matched
+        const matchedSkills = skillKeywords.filter((kw: string) => {
+          const kwLower = kw.toLowerCase();
+          return jobSkills.some((s: string) => s.toLowerCase().includes(kwLower) || kwLower.includes(s.toLowerCase())) ||
+                 jobTitleLower.includes(kwLower);
+        });
+
         const missingSkills = jobSkills.filter((s: string) =>
-          !keywords.some((kw: string) => s.toLowerCase().includes(kw))
+          !skillKeywords.some((kw: string) => s.toLowerCase().includes(kw.toLowerCase()) || kw.toLowerCase().includes(s.toLowerCase()))
         ).slice(0, 2);
 
         const rawScore = parseInt(job.raw_score) || 0;
-        const matchPct = Math.min(95, Math.max(25, Math.round(30 + (rawScore / Math.max(1, keywords.length * 85)) * 65)));
+        const maxPossibleScore = Math.max(1, skillKeywords.length * 90);
+
+        // Company bonus: if job is at the detected company, big boost
+        const companyBonus = hasCompanyFilter && companyIds.includes(parseInt(job.company_id)) ? 40 : 0;
+        // Skill match ratio bonus
+        const skillMatchRatio = skillKeywords.length > 0 ? matchedSkills.length / skillKeywords.length : 0;
+
+        const baseScore = 35 + (rawScore / maxPossibleScore) * 45 + skillMatchRatio * 15 + companyBonus;
+        const matchPct = Math.min(96, Math.max(20, Math.round(baseScore)));
 
         return {
           id: job.id,
@@ -2170,11 +2286,27 @@ export function registerRoutes(app: Express) {
           applicationCount: job.application_count,
           matchPct,
           matchedSkills: matchedSkills.slice(0, 3),
-          missingSkills
+          missingSkills,
+          companyMatch: hasCompanyFilter && companyIds.includes(parseInt(job.company_id))
         };
-      }).filter((j: any) => j.matchPct >= 25).slice(0, 3);
+      });
 
-      res.json({ jobs, keywords: keywords.slice(0, 8) });
+      // Sort: company+skill matches first, then by matchPct
+      jobs.sort((a: any, b: any) => {
+        if (a.companyMatch && !b.companyMatch) return -1;
+        if (!a.companyMatch && b.companyMatch) return 1;
+        return b.matchPct - a.matchPct;
+      });
+
+      const topJobs = jobs.slice(0, 3);
+
+      // Labels for detected companies/skills shown in UI
+      const detectedLabels: string[] = [
+        ...companyMatches.map((c: any) => `company:${c.name}`),
+        ...skillKeywords.slice(0, 6)
+      ];
+
+      res.json({ jobs: topJobs, keywords: detectedLabels });
     } catch (error) {
       console.error('Instant match error:', error);
       res.status(500).json({ message: 'Matching failed' });
