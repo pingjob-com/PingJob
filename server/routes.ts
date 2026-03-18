@@ -2333,8 +2333,8 @@ export function registerRoutes(app: Express) {
       // Labels for detected companies/skills shown in UI
       const detectedLabels: string[] = [
         ...companyMatches.map((c: any) => `company:${c.name}`),
-        ...skillKeywords.slice(0, 6)
-      ];
+        ...skillKeywords
+      ].slice(0, 10);
 
       res.json({ jobs: topJobs, keywords: detectedLabels });
     } catch (error) {

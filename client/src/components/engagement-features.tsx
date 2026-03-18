@@ -177,7 +177,7 @@ export function InstantJobMatchBar() {
           {keywords.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-4">
               <span className="text-xs text-gray-500 self-center">Detected:</span>
-              {keywords.map((kw, i) => {
+              {keywords.slice(0, 10).map((kw, i) => {
                 const isCompany = kw.startsWith('company:');
                 const label = isCompany ? kw.replace('company:', '') : kw;
                 return isCompany ? (
@@ -188,6 +188,9 @@ export function InstantJobMatchBar() {
                   <Badge key={i} variant="secondary" className="text-xs bg-teal-100 text-teal-700">{label}</Badge>
                 );
               })}
+              {keywords.length > 10 && (
+                <span className="text-xs text-gray-400 self-center">+{keywords.length - 10} more</span>
+              )}
             </div>
           )}
 
