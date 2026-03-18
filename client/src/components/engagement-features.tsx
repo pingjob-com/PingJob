@@ -220,7 +220,7 @@ export function InstantJobMatchBar() {
                           <span className="text-xs font-bold text-gray-400">#{i + 1}</span>
                           <h4 className="font-semibold text-sm text-gray-900 group-hover:text-blue-600 transition-colors truncate">{job.title}</h4>
                           {job.companyMatch && (
-                            <Badge className="text-xs bg-purple-100 text-purple-700 border-0 py-0 flex-shrink-0">🏢 Company match</Badge>
+                            <Badge className="text-xs bg-purple-100 text-purple-700 border-0 py-0 flex-shrink-0">🏢 Client Match</Badge>
                           )}
                         </div>
                         <p className="text-xs text-gray-500 mb-2">{job.companyName} · {job.location}</p>

@@ -2197,27 +2197,15 @@ export function registerRoutes(app: Express) {
         return !detectedCompanyNames.some((cn: string) => cn.includes(t.toLowerCase()) && t.length >= 5);
       }).slice(0, 15);
 
-      // ── Step 5: Build smart SQL query ─────────────────────────────────────
+      // ── Step 5: Build two-pass SQL queries ────────────────────────────────
+      // Pass A: jobs at the detected client company (if any)
+      // Pass B: all other jobs matching the skills
+      // Result: client-match jobs shown first, then other matches
       const hasCompanyFilter = companyMatches.length > 0;
       const companyIds = companyMatches.map((c: any) => c.id);
 
-      let params: any[] = [];
-      let paramIdx = 1;
-
-      // Skill params (each skill gets a LIKE param)
       const skillParams = skillKeywords.map((kw: string) => `%${kw}%`);
-      params.push(...skillParams);
-      const skillParamEnd = paramIdx + skillKeywords.length - 1;
 
-      // Company filter params
-      let companyFilterSql = '';
-      if (hasCompanyFilter) {
-        const companyPlaceholders = companyIds.map((_: number, i: number) => `$${skillKeywords.length + 1 + i}`);
-        params.push(...companyIds);
-        companyFilterSql = `AND j.company_id IN (${companyPlaceholders.join(',')})`;
-      }
-
-      // Build scoring expression
       const skillScoring = skillKeywords.length > 0 ? skillKeywords.map((kw: string, i: number) => {
         const p = i + 1;
         return `CASE WHEN j.title ILIKE $${p} THEN 50 ELSE 0 END +
@@ -2226,35 +2214,60 @@ export function registerRoutes(app: Express) {
                 CASE WHEN j.description ILIKE $${p} THEN 10 ELSE 0 END`;
       }).join(' + ') : '0';
 
-      // Require at least one skill OR company match
       const skillConditions = skillKeywords.length > 0 ? skillKeywords.map((kw: string, i: number) =>
         `(j.title ILIKE $${i + 1} OR j.skills::text ILIKE $${i + 1} OR j.requirements ILIKE $${i + 1} OR j.description ILIKE $${i + 1})`
-      ) : [];
+      ).join(' OR ') : 'true';
 
-      const whereClause = skillConditions.length > 0
-        ? `(${skillConditions.join(' OR ')}) ${companyFilterSql}`
-        : `j.is_active = true ${companyFilterSql}`;
-
-      const sql = `
+      const baseSelect = `
         SELECT j.id, j.company_id, j.title, j.city, j.state, j.location, j.salary, j.skills, j.employment_type,
                j.application_count, c.name as company_name, c.logo_url,
                (${skillScoring}) as raw_score
         FROM jobs j
         LEFT JOIN companies c ON j.company_id = c.id
-        WHERE j.is_active = true AND ${whereClause}
-        ORDER BY raw_score DESC
-        LIMIT 8
+        WHERE j.is_active = true
       `;
 
-      const result = await pool.query(sql, params);
+      // Run both queries in parallel
+      let clientRows: any[] = [];
+      let otherRows: any[] = [];
+
+      if (hasCompanyFilter && skillKeywords.length > 0) {
+        // Pass A: client-specific jobs matching skills
+        const companyPlaceholders = companyIds.map((_: number, i: number) => `$${skillKeywords.length + 1 + i}`);
+        const [clientResult, otherResult] = await Promise.all([
+          pool.query(
+            `${baseSelect} AND (${skillConditions}) AND j.company_id IN (${companyPlaceholders.join(',')}) ORDER BY raw_score DESC LIMIT 1`,
+            [...skillParams, ...companyIds]
+          ),
+          pool.query(
+            `${baseSelect} AND (${skillConditions}) AND j.company_id NOT IN (${companyPlaceholders.join(',')}) ORDER BY raw_score DESC LIMIT 5`,
+            [...skillParams, ...companyIds]
+          )
+        ]);
+        clientRows = clientResult.rows;
+        otherRows = otherResult.rows;
+      } else if (hasCompanyFilter) {
+        // Company only, no skill filter — show their jobs
+        const companyPlaceholders = companyIds.map((_: number, i: number) => `$${i + 1}`);
+        const result = await pool.query(
+          `${baseSelect} AND j.company_id IN (${companyPlaceholders.join(',')}) ORDER BY raw_score DESC LIMIT 3`,
+          companyIds
+        );
+        clientRows = result.rows;
+      } else {
+        // Skills only, no company filter
+        const result = await pool.query(
+          `${baseSelect} AND (${skillConditions}) ORDER BY raw_score DESC LIMIT 8`,
+          skillParams
+        );
+        otherRows = result.rows;
+      }
 
       // ── Step 6: Score and format results ─────────────────────────────────
-      const jobs = result.rows.map((job: any) => {
+      const formatJob = (job: any, isClientMatch: boolean) => {
         const jobSkills = Array.isArray(job.skills) ? job.skills : [];
         const jobTitleLower = (job.title || '').toLowerCase();
-        const jobCompanyLower = (job.company_name || '').toLowerCase();
 
-        // Check which skills from input are matched
         const matchedSkills = skillKeywords.filter((kw: string) => {
           const kwLower = kw.toLowerCase();
           return jobSkills.some((s: string) => s.toLowerCase().includes(kwLower) || kwLower.includes(s.toLowerCase())) ||
@@ -2267,13 +2280,10 @@ export function registerRoutes(app: Express) {
 
         const rawScore = parseInt(job.raw_score) || 0;
         const maxPossibleScore = Math.max(1, skillKeywords.length * 90);
-
-        // Company bonus: if job is at the detected company, big boost
-        const companyBonus = hasCompanyFilter && companyIds.includes(parseInt(job.company_id)) ? 40 : 0;
-        // Skill match ratio bonus
         const skillMatchRatio = skillKeywords.length > 0 ? matchedSkills.length / skillKeywords.length : 0;
+        const clientBonus = isClientMatch ? 20 : 0;
 
-        const baseScore = 35 + (rawScore / maxPossibleScore) * 45 + skillMatchRatio * 15 + companyBonus;
+        const baseScore = 35 + (rawScore / maxPossibleScore) * 45 + skillMatchRatio * 10 + clientBonus;
         const matchPct = Math.min(96, Math.max(20, Math.round(baseScore)));
 
         return {
@@ -2287,18 +2297,21 @@ export function registerRoutes(app: Express) {
           matchPct,
           matchedSkills: matchedSkills.slice(0, 3),
           missingSkills,
-          companyMatch: hasCompanyFilter && companyIds.includes(parseInt(job.company_id))
+          companyMatch: isClientMatch
         };
-      });
+      };
 
-      // Sort: company+skill matches first, then by matchPct
-      jobs.sort((a: any, b: any) => {
-        if (a.companyMatch && !b.companyMatch) return -1;
-        if (!a.companyMatch && b.companyMatch) return 1;
-        return b.matchPct - a.matchPct;
-      });
+      const clientJobs = clientRows.map((r: any) => formatJob(r, true));
+      const otherJobs = otherRows.map((r: any) => formatJob(r, false));
 
-      const topJobs = jobs.slice(0, 3);
+      // Client jobs first, then fill remaining slots with other skill matches
+      const combined = [...clientJobs, ...otherJobs];
+      const seenIds = new Set<number>();
+      const topJobs = combined.filter((j: any) => {
+        if (seenIds.has(j.id)) return false;
+        seenIds.add(j.id);
+        return true;
+      }).slice(0, 3);
 
       // Labels for detected companies/skills shown in UI
       const detectedLabels: string[] = [
