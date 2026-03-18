@@ -14,6 +14,8 @@ import {
 import { Link } from "wouter";
 
 // ─── Feature 1: Live Hiring Activity Feed (Ticker) ───────────────────────────
+interface ActivityItem { type: 'company' | 'candidate'; text: string; }
+
 export function LiveActivityFeed() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [visible, setVisible] = useState(true);
@@ -28,26 +30,28 @@ export function LiveActivityFeed() {
     refetchInterval: 10 * 60 * 1000
   });
 
-  const tickers: string[] = data?.tickers || [
-    'New jobs posted daily',
-    'Candidates applying now',
-    'Companies actively hiring',
+  const items: ActivityItem[] = data?.items?.length ? data.items : [
+    { type: 'company', text: 'Companies actively posting new jobs' },
+    { type: 'candidate', text: 'Candidates uploading resumes now' },
   ];
 
   useEffect(() => {
-    if (tickers.length <= 1) return;
+    if (items.length <= 1) return;
     const interval = setInterval(() => {
       setVisible(false);
       setTimeout(() => {
-        setCurrentIdx(prev => (prev + 1) % tickers.length);
+        setCurrentIdx(prev => (prev + 1) % items.length);
         setVisible(true);
       }, 400);
-    }, 4000);
+    }, 3500);
     return () => clearInterval(interval);
-  }, [tickers.length]);
+  }, [items.length]);
+
+  const current = items[currentIdx];
+  const isCompany = current?.type === 'company';
 
   return (
-    <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2.5 px-4">
+    <div className={`text-white py-2.5 px-4 transition-colors duration-500 ${isCompany ? 'bg-gradient-to-r from-blue-600 to-blue-700' : 'bg-gradient-to-r from-emerald-600 to-teal-600'}`}>
       <div className="max-w-7xl mx-auto flex items-center gap-3">
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <span className="relative flex h-2 w-2">
@@ -56,16 +60,17 @@ export function LiveActivityFeed() {
           </span>
           <span className="text-xs font-semibold uppercase tracking-wide opacity-90">Live</span>
         </div>
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden flex items-center gap-2">
+          <span className="text-base flex-shrink-0">{isCompany ? '🏢' : '👤'}</span>
           <p
-            className={`text-sm font-medium transition-all duration-400 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}`}
+            className={`text-sm font-medium ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}`}
             style={{ transition: 'opacity 0.4s, transform 0.4s' }}
           >
-            {tickers[currentIdx]}
+            {current?.text}
           </p>
         </div>
         <div className="flex gap-1 flex-shrink-0">
-          {tickers.map((_, i) => (
+          {items.map((item, i) => (
             <button
               key={i}
               onClick={() => { setCurrentIdx(i); setVisible(true); }}

@@ -2064,47 +2064,59 @@ export function registerRoutes(app: Express) {
   // ── Feature 1: Live Hiring Activity Feed ──────────────────────────────────
   app.get('/api/stats/activity', async (req, res) => {
     try {
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      const lastHour = new Date(now.getTime() - 60 * 60 * 1000);
-
-      const [jobsTodayRes, appsTodayRes, appsLastHourRes, totalJobsRes, activeCompaniesRes] = await Promise.all([
-        pool.query(`SELECT COUNT(*) as count FROM jobs WHERE created_at >= $1 AND is_active = true`, [todayStart]),
-        pool.query(`SELECT COUNT(*) as count FROM job_applications WHERE applied_at >= $1`, [last24h]),
-        pool.query(`SELECT COUNT(*) as count FROM job_applications WHERE applied_at >= $1`, [lastHour]),
-        pool.query(`SELECT COUNT(*) as count FROM jobs WHERE is_active = true`),
-        pool.query(`SELECT COUNT(DISTINCT company_id) as count FROM jobs WHERE is_active = true AND created_at >= $1`, [last24h])
+      // Fetch recent client job postings and recent candidate applicants in parallel
+      const [recentJobsRes, recentCandidatesRes] = await Promise.all([
+        pool.query(`
+          SELECT DISTINCT ON (c.id) c.name as company_name, j.title, j.created_at
+          FROM jobs j
+          JOIN companies c ON j.company_id = c.id
+          WHERE j.is_active = true AND c.name IS NOT NULL AND c.name != ''
+          ORDER BY c.id, j.created_at DESC
+          LIMIT 10
+        `),
+        pool.query(`
+          SELECT DISTINCT ON (u.id) u.first_name, u.last_name, u.location, ja.applied_at
+          FROM job_applications ja
+          JOIN users u ON ja.applicant_id = u.id
+          WHERE u.first_name IS NOT NULL AND u.first_name != ''
+          ORDER BY u.id, ja.applied_at DESC
+          LIMIT 10
+        `)
       ]);
 
-      const jobsToday = parseInt(jobsTodayRes.rows[0]?.count || '0');
-      const appsToday = parseInt(appsTodayRes.rows[0]?.count || '0');
-      const appsLastHour = parseInt(appsLastHourRes.rows[0]?.count || '0');
-      const totalJobs = parseInt(totalJobsRes.rows[0]?.count || '0');
-      const activeCompanies = parseInt(activeCompaniesRes.rows[0]?.count || '0');
+      // Sort each by recency after deduplication
+      const recentJobs = recentJobsRes.rows
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 6);
 
-      const tickers = [
-        jobsToday > 0 ? `${jobsToday} new jobs posted today` : `${totalJobs}+ active jobs available`,
-        appsLastHour > 0 ? `${appsLastHour} candidates applied in the last hour` : `${appsToday > 0 ? appsToday : 'Many'} candidates applied today`,
-        activeCompanies > 0 ? `${activeCompanies} companies actively hiring` : 'Hundreds of companies actively hiring',
-        'Recruiters reviewing applications now',
-        'New opportunities added every hour',
-        `${totalJobs}+ jobs across all categories`
-      ];
+      const recentCandidates = recentCandidatesRes.rows
+        .sort((a: any, b: any) => new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime())
+        .slice(0, 6);
 
-      res.json({ tickers, stats: { jobsToday, appsToday, appsLastHour, totalJobs, activeCompanies } });
+      // Build structured ticker items: interleave companies and candidates
+      const items: Array<{ type: 'company' | 'candidate'; text: string }> = [];
+      const maxLen = Math.max(recentJobs.length, recentCandidates.length);
+
+      for (let i = 0; i < maxLen; i++) {
+        if (i < recentJobs.length) {
+          const j = recentJobs[i];
+          items.push({ type: 'company', text: `${j.company_name} is hiring for ${j.title}` });
+        }
+        if (i < recentCandidates.length) {
+          const c = recentCandidates[i];
+          const name = [c.first_name, c.last_name].filter(Boolean).join(' ');
+          const loc = c.location ? ` from ${c.location}` : '';
+          items.push({ type: 'candidate', text: `${name}${loc} just uploaded their resume` });
+        }
+      }
+
+      res.json({ items });
     } catch (error) {
       console.error('Activity stats error:', error);
-      res.json({
-        tickers: [
-          'New jobs posted daily',
-          'Candidates applying now',
-          'Companies actively hiring',
-          'Recruiters reviewing resumes',
-          'Fresh opportunities every hour'
-        ],
-        stats: {}
-      });
+      res.json({ items: [
+        { type: 'company', text: 'Companies actively hiring now' },
+        { type: 'candidate', text: 'Candidates uploading resumes' }
+      ]});
     }
   });
 
