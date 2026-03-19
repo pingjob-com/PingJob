@@ -137,8 +137,7 @@ export function InstantJobMatchBar() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
-      <Card className="border-0 shadow-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 overflow-hidden">
+    <Card className="border-0 shadow-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 overflow-hidden h-full">
         <CardContent className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-2.5 rounded-xl shadow-lg">
@@ -278,8 +277,7 @@ export function InstantJobMatchBar() {
             </div>
           )}
         </CardContent>
-      </Card>
-    </div>
+    </Card>
   );
 }
 

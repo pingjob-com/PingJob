@@ -10,8 +10,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 const logoPath = 'https://cdn.pingjob.com/logo.png';
@@ -22,7 +20,6 @@ import {
   Briefcase,
   MessageCircle,
   Building,
-  Search,
   Bell,
   Settings,
   LogOut,
@@ -35,7 +32,6 @@ import {
 export default function Navigation() {
   const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Fetch notification count
@@ -76,27 +72,6 @@ export default function Navigation() {
     return false;
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      // Check current page to determine default search behavior
-      if (location.includes('/companies')) {
-        // If on companies page, search companies
-        window.location.href = `/companies?search=${encodeURIComponent(searchQuery)}`;
-      } else {
-        // Default to jobs search for all other pages
-        // For now, treat the entire query as a search term to avoid splitting company names
-        const query = searchQuery.trim();
-        window.location.href = `/jobs?search=${encodeURIComponent(query)}`;
-      }
-    }
-  };
-
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-  };
-
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -132,20 +107,6 @@ export default function Navigation() {
 
           {/* Search and User Actions */}
           <div className="flex items-center space-x-4 ml-16">
-            {/* Global Search */}
-            <div className="relative hidden lg:block">
-              <form onSubmit={handleSearch}>
-                <Input
-                  type="text"
-                  placeholder={location.includes('/companies') ? "Search companies..." : "Search jobs, companies..."}
-                  value={searchQuery}
-                  onChange={handleSearchInputChange}
-                  className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-linkedin-blue focus:border-transparent"
-                />
-                <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
-              </form>
-            </div>
-
             {/* Notifications */}
             <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
               <DropdownMenuTrigger asChild>

@@ -919,9 +919,10 @@ export default function PingJobHome() {
           </div>
         </div>
 
-        {/* AI Agent Search Box */}
+        {/* AI Job Assistant + Instant Job Match - Two Column Layout */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
-          <Card className="border-0 shadow-xl bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+          <Card className="border-0 shadow-xl bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 overflow-hidden h-full">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2.5 rounded-xl shadow-lg">
@@ -1018,10 +1019,11 @@ export default function PingJobHome() {
               )}
             </CardContent>
           </Card>
-        </div>
 
-        {/* Feature 1: Instant Job Match Bar */}
-        <InstantJobMatchBar />
+          {/* Instant Job Match - right column */}
+          <InstantJobMatchBar />
+          </div>
+        </div>
 
         {/* Feature 4: Resume Score Teaser - logged-in users only */}
         {user && <ResumeScoreTeaser />}
