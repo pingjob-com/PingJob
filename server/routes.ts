@@ -2111,7 +2111,7 @@ export function registerRoutes(app: Express) {
           const c = recentCandidates[i];
           const name = [c.first_name, c.last_name].filter(Boolean).join(' ');
           const loc = c.location ? ` from ${c.location}` : '';
-          items.push({ type: 'candidate', text: `${name}${loc} just uploaded their resume` });
+          items.push({ type: 'candidate', text: `${name}${loc} just uploaded a resume` });
         }
       }
 
