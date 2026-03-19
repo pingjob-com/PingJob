@@ -95,6 +95,7 @@ interface MatchJob {
   missingSkills: string[];
   applicationCount: number;
   companyMatch?: boolean;
+  locationMatch?: boolean;
 }
 
 export function InstantJobMatchBar() {
@@ -179,14 +180,19 @@ export function InstantJobMatchBar() {
               <span className="text-xs text-gray-500 self-center">Detected:</span>
               {keywords.slice(0, 10).map((kw, i) => {
                 const isCompany = kw.startsWith('company:');
-                const label = isCompany ? kw.replace('company:', '') : kw;
-                return isCompany ? (
+                const isLocation = kw.startsWith('location:');
+                const label = isCompany ? kw.replace('company:', '') : isLocation ? kw.replace('location:', '') : kw;
+                if (isLocation) return (
+                  <Badge key={i} className="text-xs bg-orange-100 text-orange-700 border-orange-200 border">
+                    📍 {label}
+                  </Badge>
+                );
+                if (isCompany) return (
                   <Badge key={i} className="text-xs bg-purple-100 text-purple-700 border-purple-200 border">
                     🏢 {label}
                   </Badge>
-                ) : (
-                  <Badge key={i} variant="secondary" className="text-xs bg-teal-100 text-teal-700">{label}</Badge>
                 );
+                return <Badge key={i} variant="secondary" className="text-xs bg-teal-100 text-teal-700">{label}</Badge>;
               })}
               {keywords.length > 10 && (
                 <span className="text-xs text-gray-400 self-center">+{keywords.length - 10} more</span>
@@ -227,6 +233,9 @@ export function InstantJobMatchBar() {
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-bold text-gray-400">#{i + 1}</span>
                           <h4 className="font-semibold text-sm text-gray-900 group-hover:text-blue-600 transition-colors truncate">{job.title}</h4>
+                          {job.locationMatch && (
+                            <Badge className="text-xs bg-orange-100 text-orange-700 border-0 py-0 flex-shrink-0">📍 Near You</Badge>
+                          )}
                           {job.companyMatch && (
                             <Badge className="text-xs bg-purple-100 text-purple-700 border-0 py-0 flex-shrink-0">🏢 Client Match</Badge>
                           )}

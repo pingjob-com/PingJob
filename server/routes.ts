@@ -2169,17 +2169,44 @@ export function registerRoutes(app: Express) {
         return res.json({ jobs: [], message: 'No meaningful keywords found' });
       }
 
+      // ── Step 2.5: Detect candidate location early (before company lookup) ──
+      const usStateAbbrs2 = new Set(['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC']);
+      let detectedCity: string | null = null;
+      let detectedState: string | null = null;
+      const locationRegex2 = /\b([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?),\s*([A-Z]{2})\b/g;
+      let locMatch2;
+      while ((locMatch2 = locationRegex2.exec(text)) !== null) {
+        const city = locMatch2[1].trim();
+        const state = locMatch2[2].trim();
+        if (usStateAbbrs2.has(state) && city.length >= 3) {
+          detectedCity = city;
+          detectedState = state;
+          break;
+        }
+      }
+      // Words to exclude from company name lookup (city words + resume context words)
+      const locationWords = new Set<string>(
+        detectedCity ? detectedCity.toLowerCase().split(/\s+/) : []
+      );
+
       // ── Step 3: Detect company names from input ───────────────────────────
       const fullInput = text.trim();
       const inputLower = fullInput.toLowerCase();
       const companyMatches: Array<{id: number, name: string}> = [];
 
       // Tech skill stop-list — words that are tech skills, NOT company names
+      const resumeContextWords = new Set(['current', 'previous', 'project', 'based', 'located', 'seeking', 'looking', 'summary', 'objective', 'education', 'experience', 'skills', 'contact', 'references', 'address', 'phone', 'email', 'city', 'state', 'county', 'arts', 'art', 'boot', 'camp', 'news', 'analysis', 'testing', 'inc', 'llc', 'corp', 'ltd', 'co']);
       const techSkillWords = new Set(['net', 'developer', 'engineer', 'senior', 'junior', 'manager', 'architect', 'analyst', 'react', 'python', 'java', 'aws', 'azure', 'sql', 'javascript', 'typescript', 'angular', 'nodejs', 'spring', 'docker', 'kubernetes', 'devops', 'agile', 'scrum', 'cloud', 'data', 'software', 'backend', 'frontend', 'fullstack', 'golang', 'ruby', 'php', 'swift', 'kotlin', 'flutter', 'ios', 'android', 'linux', 'git', 'api', 'rest', 'css', 'html', 'sass', 'redux', 'graphql', 'mongodb', 'mysql', 'postgres', 'redis', 'kafka', 'spark', 'scala', 'hadoop', 'tensorflow', 'pytorch']);
 
       // Look up each candidate token separately to avoid LIMIT issues
       const tokenCompanyCheckPromises = candidateTokens
-        .filter((t: string) => t.length >= 4 && !techSkillWords.has(t.toLowerCase()))
+        .filter((t: string) => {
+          const tl = t.toLowerCase();
+          return t.length >= 4
+            && !techSkillWords.has(tl)
+            && !resumeContextWords.has(tl)
+            && !locationWords.has(tl);  // skip city name words
+        })
         .map(async (token: string) => {
           const result = await pool.query(
             `SELECT id, name FROM companies WHERE name ILIKE $1 AND status = 'approved' ORDER BY LENGTH(name) ASC LIMIT 5`,
@@ -2209,9 +2236,19 @@ export function registerRoutes(app: Express) {
 
       // ── Step 4: Separate skill keywords from company names ────────────────
       const detectedCompanyNames = companyMatches.map((c: any) => c.name.toLowerCase());
+      // Also exclude city/state tokens so they don't show up as skill badges
+      const locationTokens = new Set<string>([
+        ...(detectedCity ? detectedCity.toLowerCase().split(/\s+/) : []),
+        ...(detectedState ? [detectedState.toLowerCase()] : [])
+      ]);
+
       const skillKeywords = candidateTokens.filter((t: string) => {
-        // Remove tokens that are purely company name matches
-        return !detectedCompanyNames.some((cn: string) => cn.includes(t.toLowerCase()) && t.length >= 5);
+        const tl = t.toLowerCase();
+        // Remove company name tokens
+        if (detectedCompanyNames.some((cn: string) => cn.includes(tl) && t.length >= 5)) return false;
+        // Remove city/state tokens
+        if (locationTokens.has(tl)) return false;
+        return true;
       }).slice(0, 15);
 
       // ── Step 5: Build two-pass SQL queries ────────────────────────────────
@@ -2221,9 +2258,15 @@ export function registerRoutes(app: Express) {
       const hasCompanyFilter = companyMatches.length > 0;
       const companyIds = companyMatches.map((c: any) => c.id);
 
+      // Skill params: $1..$N
       const skillParams = skillKeywords.map((kw: string) => `%${kw}%`);
+      const N = skillKeywords.length;
 
-      const skillScoring = skillKeywords.length > 0 ? skillKeywords.map((kw: string, i: number) => {
+      // City param: $N+1 (or absent if no city detected)
+      const cityParams = detectedCity ? [`%${detectedCity}%`] : [];
+      const cityParamIdx = N + 1; // only valid when detectedCity is set
+
+      const skillScoring = N > 0 ? skillKeywords.map((kw: string, i: number) => {
         const p = i + 1;
         return `CASE WHEN j.title ILIKE $${p} THEN 50 ELSE 0 END +
                 CASE WHEN j.skills::text ILIKE $${p} THEN 40 ELSE 0 END +
@@ -2231,18 +2274,29 @@ export function registerRoutes(app: Express) {
                 CASE WHEN j.description ILIKE $${p} THEN 10 ELSE 0 END`;
       }).join(' + ') : '0';
 
-      const skillConditions = skillKeywords.length > 0 ? skillKeywords.map((kw: string, i: number) =>
+      // City boost added directly to SQL score so location jobs rise above tie-breakers
+      const cityScoring = detectedCity
+        ? `+ CASE WHEN j.city ILIKE $${cityParamIdx} THEN 500 ELSE 0 END`
+        : '';
+
+      const skillConditions = N > 0 ? skillKeywords.map((kw: string, i: number) =>
         `(j.title ILIKE $${i + 1} OR j.skills::text ILIKE $${i + 1} OR j.requirements ILIKE $${i + 1} OR j.description ILIKE $${i + 1})`
       ).join(' OR ') : 'true';
+
+      // Company params start after skill + city params
+      const companyParamStart = N + cityParams.length + 1;
 
       const baseSelect = `
         SELECT j.id, j.company_id, j.title, j.city, j.state, j.location, j.salary, j.skills, j.employment_type,
                j.application_count, c.name as company_name, c.logo_url,
-               (${skillScoring}) as raw_score
+               (${skillScoring} ${cityScoring}) as raw_score
         FROM jobs j
         LEFT JOIN companies c ON j.company_id = c.id
         WHERE j.is_active = true
       `;
+
+      // Base params: skills + optional city
+      const baseParams = [...skillParams, ...cityParams];
 
       // Run both queries in parallel
       let clientRows: any[] = [];
@@ -2250,32 +2304,32 @@ export function registerRoutes(app: Express) {
 
       if (hasCompanyFilter && skillKeywords.length > 0) {
         // Pass A: client-specific jobs matching skills
-        const companyPlaceholders = companyIds.map((_: number, i: number) => `$${skillKeywords.length + 1 + i}`);
+        const companyPlaceholders = companyIds.map((_: number, i: number) => `$${companyParamStart + i}`);
         const [clientResult, otherResult] = await Promise.all([
           pool.query(
             `${baseSelect} AND (${skillConditions}) AND j.company_id IN (${companyPlaceholders.join(',')}) ORDER BY raw_score DESC LIMIT 1`,
-            [...skillParams, ...companyIds]
+            [...baseParams, ...companyIds]
           ),
           pool.query(
-            `${baseSelect} AND (${skillConditions}) AND j.company_id NOT IN (${companyPlaceholders.join(',')}) ORDER BY raw_score DESC LIMIT 5`,
-            [...skillParams, ...companyIds]
+            `${baseSelect} AND (${skillConditions}) AND j.company_id NOT IN (${companyPlaceholders.join(',')}) ORDER BY raw_score DESC LIMIT 10`,
+            [...baseParams, ...companyIds]
           )
         ]);
         clientRows = clientResult.rows;
         otherRows = otherResult.rows;
       } else if (hasCompanyFilter) {
         // Company only, no skill filter — show their jobs
-        const companyPlaceholders = companyIds.map((_: number, i: number) => `$${i + 1}`);
+        const companyPlaceholders = companyIds.map((_: number, i: number) => `$${companyParamStart + i}`);
         const result = await pool.query(
           `${baseSelect} AND j.company_id IN (${companyPlaceholders.join(',')}) ORDER BY raw_score DESC LIMIT 3`,
-          companyIds
+          [...baseParams, ...companyIds]
         );
         clientRows = result.rows;
       } else {
-        // Skills only, no company filter
+        // Skills only — city boost in SQL ensures local jobs rank higher before JS re-sort
         const result = await pool.query(
-          `${baseSelect} AND (${skillConditions}) ORDER BY raw_score DESC LIMIT 8`,
-          skillParams
+          `${baseSelect} AND (${skillConditions}) ORDER BY raw_score DESC LIMIT 12`,
+          baseParams
         );
         otherRows = result.rows;
       }
@@ -2300,7 +2354,14 @@ export function registerRoutes(app: Express) {
         const skillMatchRatio = skillKeywords.length > 0 ? matchedSkills.length / skillKeywords.length : 0;
         const clientBonus = isClientMatch ? 20 : 0;
 
-        const baseScore = 35 + (rawScore / maxPossibleScore) * 45 + skillMatchRatio * 10 + clientBonus;
+        // Location boost: if job is in the candidate's detected city, elevate it
+        const jobCityLower = (job.city || '').toLowerCase();
+        const isLocationMatch = detectedCity
+          ? jobCityLower.includes(detectedCity.toLowerCase()) || detectedCity.toLowerCase().includes(jobCityLower)
+          : false;
+        const locationBonus = isLocationMatch ? 30 : 0;
+
+        const baseScore = 35 + (rawScore / maxPossibleScore) * 45 + skillMatchRatio * 10 + clientBonus + locationBonus;
         const matchPct = Math.min(96, Math.max(20, Math.round(baseScore)));
 
         return {
@@ -2314,15 +2375,24 @@ export function registerRoutes(app: Express) {
           matchPct,
           matchedSkills: matchedSkills.slice(0, 3),
           missingSkills,
-          companyMatch: isClientMatch
+          companyMatch: isClientMatch,
+          locationMatch: isLocationMatch
         };
       };
 
       const clientJobs = clientRows.map((r: any) => formatJob(r, true));
       const otherJobs = otherRows.map((r: any) => formatJob(r, false));
 
-      // Client jobs first, then fill remaining slots with other skill matches
+      // Sort: location matches first, then client matches, then by score
       const combined = [...clientJobs, ...otherJobs];
+      combined.sort((a: any, b: any) => {
+        if (a.locationMatch && !b.locationMatch) return -1;
+        if (!a.locationMatch && b.locationMatch) return 1;
+        if (a.companyMatch && !b.companyMatch) return -1;
+        if (!a.companyMatch && b.companyMatch) return 1;
+        return b.matchPct - a.matchPct;
+      });
+
       const seenIds = new Set<number>();
       const topJobs = combined.filter((j: any) => {
         if (seenIds.has(j.id)) return false;
@@ -2330,8 +2400,9 @@ export function registerRoutes(app: Express) {
         return true;
       }).slice(0, 3);
 
-      // Labels for detected companies/skills shown in UI
+      // Labels for detected companies/skills shown in UI (location first)
       const detectedLabels: string[] = [
+        ...(detectedCity ? [`location:${detectedCity}, ${detectedState}`] : []),
         ...companyMatches.map((c: any) => `company:${c.name}`),
         ...skillKeywords
       ].slice(0, 10);
