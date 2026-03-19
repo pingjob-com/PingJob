@@ -209,22 +209,6 @@ export default function Navigation() {
 
       {/* Mobile Navigation */}
       <div className="md:hidden border-t border-gray-200">
-        {/* Mobile Search Bar */}
-        <div className="px-4 py-3 bg-gray-50">
-          <form onSubmit={handleSearch}>
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder={location.includes('/companies') ? "Search companies..." : "Search jobs, companies..."}
-                value={searchQuery}
-                onChange={handleSearchInputChange}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-linkedin-blue focus:border-transparent"
-              />
-              <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
-            </div>
-          </form>
-        </div>
-        
         {/* Mobile Navigation Icons */}
         <div className="flex justify-around py-2">
           {navigationItems.filter((item, index) => 
