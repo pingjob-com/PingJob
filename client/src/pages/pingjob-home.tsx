@@ -583,30 +583,6 @@ export default function PingJobHome() {
               </Link>
             </div>
 
-            {/* Search Box */}
-            <div className="flex-1 max-w-lg mx-8 relative">
-              <form onSubmit={handleSearch} className="relative flex items-center">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="Search jobs, companies, skills, or location..."
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    className="pl-10 pr-4 py-2 w-full"
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  size="sm" 
-                  className="ml-2 px-3"
-                  disabled={!searchQuery.trim()}
-                >
-                  Go
-                </Button>
-              </form>
-            </div>
-
             {/* Navigation & User Actions */}
             <div className="flex items-center space-x-6">
               {/* Navigation Links */}
