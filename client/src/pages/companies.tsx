@@ -791,7 +791,7 @@ export default function CompaniesPage() {
 
   const companiesPerPage = 20;
 
-  // Search ALL companies when user types in search (for non-logged-in users only)
+  // Search ALL companies when user types in search (for all users)
   const { data: searchedCompanies = [], isLoading: isSearching } = useQuery({
     queryKey: ['/api/companies/search', companySearchInput],
     queryFn: async () => {
@@ -800,7 +800,7 @@ export default function CompaniesPage() {
       if (!response.ok) throw new Error('Failed to search companies');
       return response.json();
     },
-    enabled: !user && companySearchInput.trim().length >= 2
+    enabled: companySearchInput.trim().length >= 2
   });
 
   // Search ALL companies from URL parameter (for logged-in users using header search)
@@ -895,7 +895,7 @@ export default function CompaniesPage() {
   // For non-logged-in users: use server-side search results when searching, otherwise show top companies
   // For logged-in users: use URL search parameter results from header search, otherwise show top companies
   const filteredCompanies = 
-    (!user && companySearchInput.trim().length >= 2) ? searchedCompanies :
+    (companySearchInput.trim().length >= 2) ? searchedCompanies :
     (user && urlSearchQuery.trim().length >= 2) ? urlSearchedCompanies :
     topCompanies;
 
@@ -1206,42 +1206,40 @@ export default function CompaniesPage() {
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
 
-      {/* Company Search Bar - ONLY for non-logged-in users */}
-      {!user && (
-        <Card className="mb-6">
-          <CardContent className="p-4 sm:p-6">
-            <h2 className="text-xl font-semibold mb-4">Search Companies</h2>
-            <div className="flex gap-4">
-              <Input
-                placeholder="Company name, industry, or location..."
-                value={companySearchInput}
-                onChange={(e) => setCompanySearchInput(e.target.value)}
-                className="flex-1"
-                data-testid="input-company-search"
-              />
+      {/* Company Search Bar - for all users */}
+      <Card className="mb-6">
+        <CardContent className="p-4 sm:p-6">
+          <h2 className="text-xl font-semibold mb-4">Search Companies</h2>
+          <div className="flex gap-4">
+            <Input
+              placeholder="Company name, industry, or location..."
+              value={companySearchInput}
+              onChange={(e) => setCompanySearchInput(e.target.value)}
+              className="flex-1"
+              data-testid="input-company-search"
+            />
+          </div>
+          {companySearchInput && (
+            <div className="mt-4">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCompanySearchInput("")}
+                data-testid="button-clear-search"
+              >
+                Clear Search
+              </Button>
             </div>
-            {companySearchInput && (
-              <div className="mt-4">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setCompanySearchInput("")}
-                  data-testid="button-clear-search"
-                >
-                  Clear Search
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
       {/* Company Grid */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>
-              {(!user && companySearchInput.trim().length >= 2) || (user && urlSearchQuery.trim().length >= 2)
+              {companySearchInput.trim().length >= 2 || (user && urlSearchQuery.trim().length >= 2)
                 ? `Search Results (${filteredCompanies.length} ${filteredCompanies.length === 1 ? 'company' : 'companies'} found)`
                 : 'Top Companies (76,806 total)'}
             </CardTitle>
@@ -1377,12 +1375,12 @@ export default function CompaniesPage() {
               <div className="text-center py-12">
                 <Building className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                 <h3 className="text-lg font-semibold mb-2">
-                  {((!user && companySearchInput.trim().length >= 2) || (user && urlSearchQuery.trim().length >= 2)) 
+                  {(companySearchInput.trim().length >= 2 || (user && urlSearchQuery.trim().length >= 2)) 
                     ? 'No matches found' 
                     : 'No companies available'}
                 </h3>
                 <p className="text-gray-600">
-                  {((!user && companySearchInput.trim().length >= 2) || (user && urlSearchQuery.trim().length >= 2))
+                  {(companySearchInput.trim().length >= 2 || (user && urlSearchQuery.trim().length >= 2))
                     ? 'Try adjusting your search terms or visit /companies to see all companies'
                     : 'Companies will appear here once they are approved'}
                 </p>
