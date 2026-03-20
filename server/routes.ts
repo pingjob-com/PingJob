@@ -2296,6 +2296,7 @@ export function registerRoutes(app: Express) {
       const baseSelect = `
         SELECT j.id, j.company_id, j.title, j.city, j.state, j.location, j.salary, j.skills, j.employment_type,
                j.application_count, c.name as company_name, c.logo_url,
+               (SELECT COUNT(*) FROM vendors v WHERE v.company_id = j.company_id) as vendor_count,
                (${skillScoring} ${cityScoring}) as raw_score
         FROM jobs j
         LEFT JOIN companies c ON j.company_id = c.id
@@ -2375,6 +2376,8 @@ export function registerRoutes(app: Express) {
           id: job.id,
           title: job.title,
           companyName: job.company_name,
+          companyLogo: job.logo_url || null,
+          vendorCount: parseInt(job.vendor_count) || 0,
           location: [job.city, job.state].filter(Boolean).join(', ') || job.location || 'Remote',
           salary: job.salary,
           employmentType: job.employment_type,

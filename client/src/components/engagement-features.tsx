@@ -120,6 +120,8 @@ interface MatchJob {
   id: number;
   title: string;
   companyName: string;
+  companyLogo?: string | null;
+  vendorCount?: number;
   location: string;
   salary?: string;
   matchPct: number;
@@ -256,49 +258,79 @@ export function InstantJobMatchBar() {
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 Top {matchResults.length} matches for you
               </p>
-              {matchResults.map((job, i) => (
-                <Link key={job.id} href={`/jobs/${job.id}`}>
-                  <div className="bg-white rounded-lg p-4 hover:shadow-md transition-all border border-gray-100 cursor-pointer group">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-bold text-gray-400">#{i + 1}</span>
-                          <h4 className="font-semibold text-sm text-gray-900 group-hover:text-blue-600 transition-colors truncate">{job.title}</h4>
-                          {job.locationMatch && (
-                            <Badge className="text-xs bg-orange-100 text-orange-700 border-0 py-0 flex-shrink-0">📍 Near You</Badge>
-                          )}
-                          {job.companyMatch && (
-                            <Badge className="text-xs bg-purple-100 text-purple-700 border-0 py-0 flex-shrink-0">🏢 Client Match</Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 mb-2">{job.companyName} · {job.location}</p>
+              {matchResults.map((job, i) => {
+                const logoUrl = job.companyLogo ? resolveLogoUrl(job.companyLogo) : null;
+                return (
+                  <Link key={job.id} href={`/jobs/${job.id}`}>
+                    <div className="bg-white rounded-lg p-4 hover:shadow-md transition-all border border-gray-100 cursor-pointer group">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
 
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                            <div
-                              className={`h-1.5 rounded-full ${getMatchBarColor(job.matchPct)} transition-all`}
-                              style={{ width: `${job.matchPct}%` }}
-                            />
+                          {/* Company header: logo + bold name + vendor count */}
+                          <div className="flex items-center gap-2 mb-2">
+                            {logoUrl ? (
+                              <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                <img
+                                  src={logoUrl}
+                                  alt={job.companyName}
+                                  className="w-full h-full object-contain p-0.5"
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 text-base">🏢</div>
+                            )}
+                            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                              <span className="text-sm font-bold text-gray-800 truncate">{job.companyName}</span>
+                              {job.vendorCount != null && job.vendorCount > 0 && (
+                                <span className="flex-shrink-0 text-xs bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap">
+                                  {job.vendorCount} vendor{job.vendorCount !== 1 ? 's' : ''}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${getMatchColor(job.matchPct)}`}>
-                            {job.matchPct}% match
-                          </span>
-                        </div>
 
-                        <div className="flex flex-wrap gap-1">
-                          {job.matchedSkills.map((s, j) => (
-                            <Badge key={j} className="text-xs bg-green-100 text-green-700 border-0 py-0">✓ {s}</Badge>
-                          ))}
-                          {job.missingSkills.map((s, j) => (
-                            <Badge key={j} variant="outline" className="text-xs text-gray-400 py-0">missing: {s}</Badge>
-                          ))}
+                          {/* Job title + badges */}
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="text-xs font-bold text-gray-400">#{i + 1}</span>
+                            <h4 className="font-semibold text-sm text-gray-900 group-hover:text-blue-600 transition-colors truncate">{job.title}</h4>
+                            {job.locationMatch && (
+                              <Badge className="text-xs bg-orange-100 text-orange-700 border-0 py-0 flex-shrink-0">📍 Near You</Badge>
+                            )}
+                            {job.companyMatch && (
+                              <Badge className="text-xs bg-purple-100 text-purple-700 border-0 py-0 flex-shrink-0">🏢 Client Match</Badge>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-gray-500 mb-2">{job.location}</p>
+
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="flex-1 bg-gray-100 rounded-full h-1.5">
+                              <div
+                                className={`h-1.5 rounded-full ${getMatchBarColor(job.matchPct)} transition-all`}
+                                style={{ width: `${job.matchPct}%` }}
+                              />
+                            </div>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${getMatchColor(job.matchPct)}`}>
+                              {job.matchPct}% match
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap gap-1">
+                            {job.matchedSkills.map((s, j) => (
+                              <Badge key={j} className="text-xs bg-green-100 text-green-700 border-0 py-0">✓ {s}</Badge>
+                            ))}
+                            {job.missingSkills.map((s, j) => (
+                              <Badge key={j} variant="outline" className="text-xs text-gray-400 py-0">missing: {s}</Badge>
+                            ))}
+                          </div>
                         </div>
+                        <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 mt-1 group-hover:text-blue-500 transition-colors" />
                       </div>
-                      <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 mt-1 group-hover:text-blue-500 transition-colors" />
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
               <div className="text-center pt-1">
                 <Link href="/jobs">
                   <Button variant="outline" size="sm" className="text-teal-600 border-teal-300 hover:bg-teal-50">
