@@ -2067,7 +2067,8 @@ export function registerRoutes(app: Express) {
       // Fetch most-recent job postings (same order as homepage) and most-recent unique candidates
       const [recentJobsRes, recentCandidatesRes] = await Promise.all([
         pool.query(`
-          SELECT c.name as company_name, j.title, j.created_at
+          SELECT c.name as company_name, c.id as company_id, c.logo_url as company_logo, j.title, j.created_at,
+            (SELECT COUNT(*) FROM vendors v WHERE v.company_id = c.id) as vendor_count
           FROM jobs j
           JOIN companies c ON j.company_id = c.id
           WHERE j.is_active = true AND c.name IS NOT NULL AND c.name != ''
@@ -2099,13 +2100,19 @@ export function registerRoutes(app: Express) {
         .slice(0, 6);
 
       // Build structured ticker items: interleave companies and candidates
-      const items: Array<{ type: 'company' | 'candidate'; text: string }> = [];
+      const items: Array<{ type: 'company' | 'candidate'; text: string; companyLogo?: string; vendorCount?: number; companyId?: number }> = [];
       const maxLen = Math.max(recentJobs.length, recentCandidates.length);
 
       for (let i = 0; i < maxLen; i++) {
         if (i < recentJobs.length) {
           const j = recentJobs[i];
-          items.push({ type: 'company', text: `${j.company_name} is hiring for ${j.title}` });
+          items.push({
+            type: 'company',
+            text: `${j.company_name} is hiring for ${j.title}`,
+            companyLogo: j.company_logo || null,
+            vendorCount: parseInt(j.vendor_count) || 0,
+            companyId: j.company_id
+          });
         }
         if (i < recentCandidates.length) {
           const c = recentCandidates[i];

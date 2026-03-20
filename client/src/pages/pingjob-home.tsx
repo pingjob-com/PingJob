@@ -1290,6 +1290,11 @@ export default function PingJobHome() {
           </CardContent>
         </Card>
 
+        {/* Mobile Instant Job Match */}
+        <div className="mb-6">
+          <InstantJobMatchBar />
+        </div>
+
         {/* Mobile Hero Stats - Matching desktop style */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-6 mb-6 shadow-xl">
           <div className="grid grid-cols-2 gap-4 mb-4">

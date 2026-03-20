@@ -12,9 +12,16 @@ import {
   MapPin, DollarSign, Briefcase, Activity, Trophy
 } from "lucide-react";
 import { Link } from "wouter";
+import { resolveLogoUrl } from "@/lib/apiConfig";
 
 // ─── Feature 1: Live Hiring Activity Feed (Ticker) ───────────────────────────
-interface ActivityItem { type: 'company' | 'candidate'; text: string; }
+interface ActivityItem {
+  type: 'company' | 'candidate';
+  text: string;
+  companyLogo?: string | null;
+  vendorCount?: number;
+  companyId?: number;
+}
 
 export function LiveActivityFeed() {
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -50,25 +57,50 @@ export function LiveActivityFeed() {
   const current = items[currentIdx];
   const isCompany = current?.type === 'company';
 
+  const logoUrl = isCompany && current?.companyLogo ? resolveLogoUrl(current.companyLogo) : null;
+
   return (
     <div className={`text-white py-2.5 px-4 transition-colors duration-500 ${isCompany ? 'bg-gradient-to-r from-blue-600 to-blue-700' : 'bg-gradient-to-r from-emerald-600 to-teal-600'}`}>
       <div className="max-w-7xl mx-auto flex items-center gap-3">
+        {/* Live indicator */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
           </span>
-          <span className="text-xs font-semibold uppercase tracking-wide opacity-90">Live</span>
+          <span className="text-xs font-semibold uppercase tracking-wide opacity-90 hidden sm:inline">Live</span>
         </div>
-        <div className="flex-1 overflow-hidden flex items-center gap-2">
-          <span className="text-base flex-shrink-0">{isCompany ? '🏢' : '👤'}</span>
-          <p
-            className={`text-sm font-medium ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}`}
-            style={{ transition: 'opacity 0.4s, transform 0.4s' }}
-          >
-            {current?.text}
-          </p>
+
+        {/* Company logo or emoji icon */}
+        <div className="flex-shrink-0">
+          {isCompany && logoUrl ? (
+            <div className="w-7 h-7 rounded-full bg-white/20 overflow-hidden flex items-center justify-center border border-white/30">
+              <img
+                src={logoUrl}
+                alt=""
+                className="w-full h-full object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            </div>
+          ) : (
+            <span className="text-base">{isCompany ? '🏢' : '👤'}</span>
+          )}
         </div>
+
+        {/* Text + vendor count */}
+        <div
+          className={`flex-1 overflow-hidden flex items-center gap-2 min-w-0 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}`}
+          style={{ transition: 'opacity 0.4s, transform 0.4s' }}
+        >
+          <p className="text-sm font-medium truncate">{current?.text}</p>
+          {isCompany && current?.vendorCount != null && current.vendorCount > 0 && (
+            <span className="flex-shrink-0 bg-white/20 border border-white/30 text-white text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
+              {current.vendorCount} vendor{current.vendorCount !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+
+        {/* Dot pagination */}
         <div className="flex gap-1 flex-shrink-0">
           {items.map((item, i) => (
             <button
