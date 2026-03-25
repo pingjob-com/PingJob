@@ -92,6 +92,13 @@ html, body, #root {
   opacity: 1 !important;
 }
 
+@media (max-width: 768px) {
+  html, body, #root {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+}
+
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
   /* General mobile layout */

@@ -60,8 +60,8 @@ export function LiveActivityFeed() {
   const logoUrl = isCompany && current?.companyLogo ? resolveLogoUrl(current.companyLogo) : null;
 
   return (
-    <div className={`text-white py-2.5 px-4 transition-colors duration-500 ${isCompany ? 'bg-gradient-to-r from-blue-600 to-blue-700' : 'bg-gradient-to-r from-emerald-600 to-teal-600'}`}>
-      <div className="max-w-7xl mx-auto flex items-center gap-3">
+    <div className={`w-full overflow-hidden text-white py-2.5 px-4 transition-colors duration-500 ${isCompany ? 'bg-gradient-to-r from-blue-600 to-blue-700' : 'bg-gradient-to-r from-emerald-600 to-teal-600'}`}>
+      <div className="max-w-7xl mx-auto flex items-center gap-3 min-w-0">
         {/* Live indicator */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <span className="relative flex h-2 w-2">
