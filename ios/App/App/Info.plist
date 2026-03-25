@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>PingJob</string>
+	<string>PingJob</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -20,6 +20,76 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+
+	<!-- OAuth deep link URL scheme -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.pingjob</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>pingjob</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- Camera & Photo Library permissions -->
+	<key>NSCameraUsageDescription</key>
+	<string>PingJob needs camera access to take profile photos and upload documents.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>PingJob needs photo library access to upload your profile photo and resume.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>PingJob needs permission to save photos to your library.</string>
+
+	<!-- Microphone (required by some WebView APIs) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>PingJob may use the microphone for voice-based features.</string>
+
+	<!-- AdMob iOS App ID (test ID — replace with production ID before release) -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
+
+	<!-- Allow SKAdNetwork for ad attribution -->
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
+
+	<!-- Network security -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>pingjob.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>cdn.pingjob.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+
+	<!-- Associated domains for universal links -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:pingjob.com</string>
+		<string>applinks:www.pingjob.com</string>
+	</array>
+
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
