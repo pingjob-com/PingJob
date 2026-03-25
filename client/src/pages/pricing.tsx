@@ -267,18 +267,22 @@ export default function Pricing() {
             <span className={`text-sm font-medium ${billingPeriod === 'monthly' ? 'text-gray-900' : 'text-gray-500'}`}>
               Monthly
             </span>
-            <button
+            <div
+              role="switch"
+              aria-checked={billingPeriod === 'yearly'}
+              tabIndex={0}
               onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              onKeyDown={(e) => e.key === 'Enter' || e.key === ' ' ? setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly') : undefined}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors focus:outline-none ${
                 billingPeriod === 'yearly' ? 'bg-blue-600' : 'bg-gray-200'
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
                   billingPeriod === 'yearly' ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
-            </button>
+            </div>
             <span className={`text-sm font-medium ${billingPeriod === 'yearly' ? 'text-gray-900' : 'text-gray-500'}`}>
               Yearly
             </span>
