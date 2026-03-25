@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import BackToTopButton from "@/components/back-to-top-button";
 import {
   Tooltip,
@@ -961,15 +962,24 @@ export default function PingJobHome() {
                       href={item._type === 'vendor' ? `/companies/${item.client_company_id}` : item._type === 'company' ? `/companies/${item.id}` : `/jobs/${item.id}`}
                     >
                       <div className="bg-white rounded-lg p-4 hover:shadow-md transition-all duration-200 border border-gray-100 cursor-pointer flex items-center gap-4">
-                        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${item._type === 'vendor' ? 'bg-purple-100' : item._type === 'company' ? 'bg-green-100' : 'bg-blue-100'}`}>
-                          {item._type === 'vendor' ? (
+                        {item._type === 'vendor' ? (
+                          <div className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center bg-purple-100">
                             <Users className="h-5 w-5 text-purple-600" />
-                          ) : item._type === 'company' ? (
-                            <Building2 className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <Briefcase className="h-5 w-5 text-blue-600" />
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <Avatar className="h-10 w-10 rounded-lg flex-shrink-0 border border-gray-200">
+                            <AvatarImage
+                              src={resolveLogoUrl(item._type === 'company' ? item.logoUrl : item.company?.logoUrl)}
+                              alt={item._type === 'company' ? item.name : (item.company?.name || item.title)}
+                              className="object-contain p-1"
+                            />
+                            <AvatarFallback className={`rounded-lg text-sm font-bold ${item._type === 'company' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                              {item._type === 'company'
+                                ? (item.name?.charAt(0)?.toUpperCase() || 'C')
+                                : (item.company?.name?.charAt(0)?.toUpperCase() || <Briefcase className="h-4 w-4" />)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h4 className="font-semibold text-sm text-gray-900 truncate">
