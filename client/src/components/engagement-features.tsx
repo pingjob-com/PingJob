@@ -100,13 +100,14 @@ export function LiveActivityFeed() {
           )}
         </div>
 
-        {/* Dot pagination */}
-        <div className="flex gap-1 flex-shrink-0">
+        {/* Dot pagination — hidden on mobile to avoid layout breaking */}
+        <div className="hidden sm:flex gap-1 flex-shrink-0">
           {items.map((item, i) => (
-            <button
+            <div
               key={i}
+              role="button"
               onClick={() => { setCurrentIdx(i); setVisible(true); }}
-              className={`w-1.5 h-1.5 rounded-full transition-all ${i === currentIdx ? 'bg-white' : 'bg-white/40'}`}
+              className={`w-1.5 h-1.5 rounded-full transition-all cursor-pointer ${i === currentIdx ? 'bg-white' : 'bg-white/40'}`}
             />
           ))}
         </div>
