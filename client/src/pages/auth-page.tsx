@@ -362,7 +362,7 @@ export default function AuthPage() {
                 </div>
               ) : (
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className="grid w-full grid-cols-2 items-stretch [&>*]:h-full">
                     <TabsTrigger value="login">Sign In</TabsTrigger>
                     <TabsTrigger value="register">Sign Up</TabsTrigger>
                   </TabsList>
