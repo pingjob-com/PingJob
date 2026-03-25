@@ -202,20 +202,6 @@ export default function JobCard({ job, compact = false, showCompany = true }: Jo
   };
 
   if (compact) {
-    // Debug logging to see what data we have
-    if (import.meta.env.DEV) {
-      const formatted = formatLocation(job);
-      console.log('=== JobCard DEBUG ===');
-      console.log('Title:', job.title);
-      console.log('Job location:', job.location);
-      console.log('Company location:', job.company?.location);
-      console.log('Full job object:', job);
-      console.log('Formatted location:', formatted);
-      console.log('===================');
-    }
-    
-
-    
     return (
       <Card className="job-card hover:shadow-md transition-all duration-200">
         <CardContent className="p-4">
@@ -223,9 +209,21 @@ export default function JobCard({ job, compact = false, showCompany = true }: Jo
             <h3 className="font-semibold text-sm line-clamp-2">{job?.title || 'Untitled Job'}</h3>
 
             {showCompany && (
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-gray-600">{(job as any).companyName || job?.company?.name || 'Unknown Company'}</p>
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Avatar className="h-5 w-5 rounded flex-shrink-0">
+                    <AvatarImage
+                      src={resolveLogoUrl(job?.company?.logoUrl)}
+                      alt={job?.company?.name || 'Company'}
+                      className="object-contain"
+                    />
+                    <AvatarFallback className="bg-blue-600 text-white text-[8px] font-bold rounded">
+                      {((job as any).companyName || job?.company?.name || 'C').charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="text-xs text-gray-600 truncate">{(job as any).companyName || job?.company?.name || 'Unknown Company'}</p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {/* Admin Resume Count Badge - Clickable */}
                   {((user?.email === 'krupas@vedsoft.com' || user?.email === 'krupashankar@gmail.com' || user?.userType === 'admin') && job?.resumeCount !== undefined && Number(job.resumeCount) > 0) && (
                     <button

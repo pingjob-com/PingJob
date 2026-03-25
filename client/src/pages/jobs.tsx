@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
@@ -672,21 +673,16 @@ export default function Jobs() {
                         <CardContent className="p-6">
                           <div className="flex items-start justify-between">
                             <div className="flex items-start space-x-4 flex-1">
-                              <div className="w-12 h-12 border-2 border-red-500 rounded-lg overflow-hidden bg-yellow-200 flex-shrink-0">
-                                {job.company?.logoUrl && job.company.logoUrl !== 'NULL' && job.company.logoUrl !== 'logos/NULL' ? (
-                                  <img 
-                                    src={resolveLogoUrl(job.company.logoUrl)} 
-                                    alt={job.company?.name || 'Company'}
-                                    className="w-full h-full object-contain p-1"
-                                    onError={(e: any) => {
-                                      e.currentTarget.style.display = 'none';
-                                    }}
-                                  />
-                                ) : null}
-                                <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white text-xs font-bold">
-                                  {job.company?.name ? job.company.name.charAt(0).toUpperCase() : 'C'}
-                                </div>
-                              </div>
+                              <Avatar className="h-12 w-12 rounded-lg flex-shrink-0 border border-gray-200">
+                                <AvatarImage
+                                  src={resolveLogoUrl(job.company?.logoUrl)}
+                                  alt={job.company?.name || 'Company'}
+                                  className="object-contain p-1"
+                                />
+                                <AvatarFallback className="bg-blue-600 text-white rounded-lg text-sm font-bold">
+                                  {job.company?.name?.charAt(0)?.toUpperCase() || 'C'}
+                                </AvatarFallback>
+                              </Avatar>
                               
                               <div className="flex-1 min-w-0">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-1">
