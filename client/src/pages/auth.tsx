@@ -305,27 +305,44 @@ export default function Auth() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <Card className="mb-6">
-          <CardHeader className="space-y-1">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 items-stretch [&>*]:h-full mb-4">
-                <TabsTrigger value="login">Sign In</TabsTrigger>
-                <TabsTrigger value="register">Sign Up</TabsTrigger>
-              </TabsList>
+          <CardHeader className="space-y-3">
+            {/* Custom tab switcher — uses flex so active button stays perfectly centered */}
+            <div className="flex w-full rounded-md bg-muted p-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab("login")}
+                className={`flex-1 rounded-sm py-1.5 text-sm font-medium transition-all focus:outline-none ${
+                  activeTab === "login"
+                    ? "bg-white text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("register")}
+                className={`flex-1 rounded-sm py-1.5 text-sm font-medium transition-all focus:outline-none ${
+                  activeTab === "register"
+                    ? "bg-white text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Sign Up
+              </button>
+            </div>
 
-              <TabsContent value="login">
+            {activeTab === "login" ? (
+              <>
                 <CardTitle>Welcome back</CardTitle>
-                <CardDescription>
-                  Enter your credentials to access your account
-                </CardDescription>
-              </TabsContent>
-
-              <TabsContent value="register">
+                <CardDescription>Enter your credentials to access your account</CardDescription>
+              </>
+            ) : (
+              <>
                 <CardTitle>Create account</CardTitle>
-                <CardDescription>
-                  Join thousands of professionals
-                </CardDescription>
-              </TabsContent>
-            </Tabs>
+                <CardDescription>Join thousands of professionals</CardDescription>
+              </>
+            )}
           </CardHeader>
 
           <CardContent>
